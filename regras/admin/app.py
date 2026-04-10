@@ -28,8 +28,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ─── Auth ──────────────────────────────────────────────────────────────────────
-SECRET_KEY = secrets.token_hex(32)
+# ─── Auth (persistent key across restarts) ───────────────────────────────────
+KEY_FILE = Path(__file__).parent / ".secret_key"
+if KEY_FILE.exists():
+    SECRET_KEY = KEY_FILE.read_text().strip()
+else:
+    SECRET_KEY = secrets.token_hex(32)
+    KEY_FILE.write_text(SECRET_KEY)
 TOKEN_MAX_AGE = 60 * 60 * 24  # 24h
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
