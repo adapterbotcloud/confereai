@@ -298,6 +298,8 @@ async def ml_cargos(request: Request):
 async def ml_carregar_cache(request: Request, method: str = "yoy", cargo: str = "P115"):
     require_auth(request)
     from pathlib import Path
+    # Normaliza nome do metodo (frontend usa 'ajustado', backend usa 'cagr')
+    method = 'cagr' if method == 'ajustado' else method
     cache_file = Path(__file__).parent.parent.parent / "data" / "ml_cache" / f"{method}_{cargo}.json"
     if cache_file.exists():
         with open(cache_file) as f:
@@ -313,30 +315,25 @@ async def ml_carregar_cache(request: Request, method: str = "yoy", cargo: str = 
 @app.get("/api/ml/comparar")
 async def ml_comparar(request: Request, cargo: str = "P115"):
     require_auth(request)
-    import pandas as pd
     from pathlib import Path
+    import json
 
+    METHOD_LABELS = {"yoy": "YoY", "cagr": "CAGR", "temporal": "Sem Ajuste"}
     results = []
-    for method in ["yoy", "ajustado", "temporal"]:
-        base = Path(__file__).parent.parent.parent / "data" / f"baseline_results_{method}"
-        csv_file = base / f"anomalias_{method}_{cargo}.csv"
-        if not csv_file.exists():
-            continue
-        try:
-            df = pd.read_csv(csv_file, delimiter=";", encoding="utf-8")
-            n_total = len(df)
-            n_treino = int(n_total * 0.8)
-            df_teste = df.iloc[n_treino:]
-            pct_teste = round(df_teste["anomalo"].mean() * 100, 1) if "anomalo" in df_teste.columns else 0
-            score_medio = round(df_teste["IF_score"].mean(), 4) if "IF_score" in df_teste.columns else 0
-            results.append({
-                "method": method,
-                "label": {"yoy": "YoY", "ajustado": "CAGR", "temporal": "Sem Ajuste"}.get(method, method),
-                "pct_anomalias_teste": pct_teste,
-                "score_medio": score_medio,
-            })
-        except Exception:
-            pass
+    for method in ["yoy", "cagr", "temporal"]:
+        # Tenta ler do cache ML (ml_inline.py)
+        cache_file = Path(__file__).parent.parent.parent / "data" / "ml_cache" / f"{method}_{cargo}.json"
+        if cache_file.exists():
+            try:
+                data = json.loads(cache_file.read_text())
+                results.append({
+                    "method": method,
+                    "label": METHOD_LABELS.get(method, method),
+                    "pct_anomalias_teste": data.get("pct_anomalias_teste", 0),
+                    "score_medio": round(data.get("score_medio_teste", 0), 4),
+                })
+            except Exception:
+                pass
     return {"cargo": cargo, "methods": results}
 
 
@@ -345,6 +342,7 @@ async def ml_rodar(request: Request):
     require_auth(request)
     body = await request.json()
     method = body.get("method", "yoy")
+    method = 'cagr' if method == 'ajustado' else method  # normaliza 'ajustado' -> 'cagr'
     cargo = body.get("cargo")
     if not cargo:
         return JSONResponse({"ok": False, "erro": "Cargo obrigatorio"}, status_code=400)
