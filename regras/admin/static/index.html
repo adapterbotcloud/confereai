@@ -1064,7 +1064,6 @@ function carregarCargosML() {
 }
 
 async function carregarML() {
-  showTab('ml');
   var cargoSel = document.getElementById('ml-cargo-select');
   if (!cargoSel) { alert('Dropdown de cargo não encontrado.'); return; }
   var cargo = cargoSel.value;
@@ -1224,25 +1223,25 @@ function mostrarResultadoML(r) {
 }
 
 function voltarFormML() {
-  // Salva valor selecionado
-  var selCargo = document.getElementById('ml-cargo-select');
-  var cargoValor = selCargo ? selCargo.value : 'P115';
-  var cargos = window._cargos || [];
   showTab('ml');
-  var formHtml = '<div style="margin-top:8px">' +
-    '<div class="card" style="margin-bottom:8px"><div class="card-header"><div class="card-title">Selecionar Cargo</div></div>' +
-    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px">' +
-    '<select id="ml-cargo-select" onchange="carregarML()" style="flex:1;min-width:160px;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px"></select>' +
-    '<select id="ml-metodo-select" onchange="carregarML()" style="padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">' +
-    '<option value="yoy">YoY</option><option value="ajustado">CAGR</option><option value="temporal">Sem Ajuste</option></select>' +
-    '<button class="btn btn-primary" onclick="rodarML()" style="padding:8px 16px;font-size:13px">▶ Rodar ML</button></div></div></div>';
-  document.getElementById('tab-ml').innerHTML = formHtml;
-  var newSel = document.getElementById('ml-cargo-select');
-  if (newSel && cargos.length) {
-    newSel.innerHTML = cargos.map(function(c) {
-      return '<option value="' + c.cargo + '">' + c.cargo + ' (' + c.n_registros.toLocaleString('pt-BR') + ')</option>';
+  var cargoValor = (document.getElementById('ml-cargo-select') || {}).value || 'P115';
+  var cargos = window._cargos || [];
+  var sorted = [...cargos].sort(function(a,b){ return b.n_registros - a.n_registros; });
+  // Repoe apenas o card-ml-detalhe
+  var card = document.getElementById('card-ml-detalhe');
+  if (card) {
+    card.style.display = 'block';
+    var t = document.getElementById('ml-cargo-titulo'); if (t) t.textContent = 'Selecione um cargo';
+    var pt = document.getElementById('ml-pct-treino'); if (pt) pt.textContent = '—';
+    var ps = document.getElementById('ml-pct-teste'); if (ps) ps.textContent = '—';
+    var pr = document.getElementById('ml-n-rubricas'); if (pr) pr.textContent = '—';
+  }
+  var selCargo = document.getElementById('ml-cargo-select');
+  if (selCargo && cargos.length) {
+    selCargo.innerHTML = sorted.map(function(c) {
+      return '<option value="' + c.cargo + '">' + c.cargo + ' (' + c.n_registros.toLocaleString('pt-BR') + ' reg)</option>';
     }).join('');
-    newSel.value = cargoValor;
+    selCargo.value = cargoValor;
   }
 }
 
