@@ -1265,13 +1265,26 @@ function voltarFormML() {
   document.getElementById('tab-ml').innerHTML = formHtml;
 
   // Repoe dropdown de cargos
+  // Repoe dropdown e mostra card de placeholder
   var selCargo = document.getElementById('ml-cargo-select');
   if (selCargo && cargos.length) {
     selCargo.innerHTML = sorted.map(function(c) {
       return '<option value="' + c.cargo + '">' + c.cargo + ' (' + c.n_registros.toLocaleString('pt-BR') + ' reg)</option>';
     }).join('');
     selCargo.value = cargoValor;
+    // Dispara onchange explicitamente apos repovoar
+    carregarML();
   }
+  // Mostra card-ml-detalhe com placeholder
+  var card = document.getElementById('card-ml-detalhe');
+  if (card) { card.style.display = 'block'; }
+  var titulo = document.getElementById('ml-cargo-titulo');
+  if (titulo) titulo.textContent = 'Selecione um cargo';
+  var pt = document.getElementById('ml-pct-treino'); if (pt) pt.textContent = '—';
+  var ps = document.getElementById('ml-pct-teste'); if (ps) ps.textContent = '—';
+  var pr = document.getElementById('ml-n-rubricas'); if (pr) pr.textContent = '—';
+  var pn = document.getElementById('ml-n-treino'); if (pn) pn.textContent = '—';
+  var pte = document.getElementById('ml-n-teste'); if (pte) pte.textContent = '—';
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
