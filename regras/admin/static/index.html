@@ -390,6 +390,12 @@ function logout() {
   AUTH.token = null;
   AUTH.user = null;
   window.mlLoaded = false;
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  var btn = document.getElementById('login-btn');
+  if (btn) { btn.disabled = false; btn.innerHTML = 'Entrar'; }
+  var erro = document.getElementById('login-erro');
+  if (erro) erro.style.display = 'none';
   document.getElementById('login-overlay').style.display = 'flex';
   showTab('regras');
 }
