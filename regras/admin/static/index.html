@@ -1139,40 +1139,37 @@ async function pollJob(jobId, cargo, method, btn) {
 }
 
 function mostrarResultadoML(r) {
-  console.log('[mostrarResultadoML] INICIO, keys:', Object.keys(r).join(','));
-  console.log('[mostrarResultadoML] cargo:', r.cargo, 'method:', r.method, 'pct_teste:', r.pct_anomalias_teste);
-  var card = document.getElementById('card-ml-detalhe');
-  card.style.display = 'block';
-  card.style.border = '2px solid #4fc3f7';
-  card.style.borderRadius = '12px';
-  card.style.background = '#1a2a3a';
-  card.style.padding = '20px';
-  card.style.position = 'relative';
-  card.style.zIndex = '10';
+  console.log('[mostrarResultadoML] INICIO', r.cargo);
   var pct = r.pct_anomalias_teste;
-  toast('✅ ML completo: ' + r.cargo + ' = ' + pct + '% anomalias', pct > 5 ? 'aviso' : 'ok');
-  setTimeout(function() { window.scrollTo({top: card.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth'}); }, 200);
-  document.getElementById('ml-cargo-titulo').textContent = r.cargo + ' / ' + r.method;
-  document.getElementById('ml-periodo-treino').textContent = r.periodo_treino || '-';
-  document.getElementById('ml-periodo-teste').textContent = r.periodo_teste || '-';
-  document.getElementById('ml-pct-treino').textContent = r.pct_anomalias_treino + '%';
-  document.getElementById('ml-pct-teste').textContent = r.pct_anomalias_teste + '%';
-  document.getElementById('ml-pct-teste').style.color = r.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)';
-  document.getElementById('ml-n-rubricas').textContent = r.n_rubricas;
-  document.getElementById('ml-n-treino').textContent = r.n_treino;
-  document.getElementById('ml-n-teste').textContent = r.n_teste;
-  document.getElementById('ml-anomalias-treino').textContent = r.pct_anomalias_treino + '%';
-  document.getElementById('ml-anomalias-teste').textContent = r.pct_anomalias_teste + '%';
-  console.log('[mostrarResultadoML] FIM, elementos atualizados');
-  
+  var pctColor = pct > 5 ? '#ef5350' : '#66bb6a';
+  var topRows = '';
   var top = r.top_vinculos_anomalos || [];
   if (top.length > 0) {
-    document.getElementById('ml-top-anomalos').innerHTML = top.map(function(v) {
-      return '<tr><td><code>' + v.isn_vinculo + '</code></td><td>' + v.qtd_meses + '</td><td style="color:var(--red)">' + v.score_medio + '</td></tr>';
-    }).join('');
+    top.forEach(function(v) {
+      topRows += '<tr><td style="padding:8px; font-family:monospace">' + v.isn_vinculo + '</td><td style="padding:8px">' + v.qtd_meses + '</td><td style="padding:8px; color:#ef5350">' + v.score_medio.toFixed(4) + '</td></tr>';
+    });
   } else {
-    document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:32px"><div style="font-size:48px; margin-bottom:8px">✅</div><div style="font-size:16px; font-weight:600; color:var(--green)">Nenhuma anomalia detectada</div></td></tr>';
+    topRows = '<tr><td colspan="3" style="text-align:center;padding:32px;color:#66bb6a;font-size:16px">✅ Nenhuma anomalia detectada</td></tr>';
   }
+  var html = '<div style="background:#1a2a3a;border:2px solid #4fc3f7;border-radius:12px;padding:24px;margin-top:16px">' +
+    '<div style="font-size:20px;font-weight:700;color:#4fc3f7;margin-bottom:8px">Análise ML — ' + r.cargo + ' / ' + r.method + '</div>' +
+    '<div style="font-size:13px;color:#8892b0;margin-bottom:16px">Treino: ' + (r.periodo_treino || '-') + ' | Teste: ' + (r.periodo_teste || '-') + '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">' +
+      '<div style="background:#21253a;padding:16px;border-radius:8px;text-align:center">' +
+        '<div style="font-size:28px;font-weight:700;color:#4fc3f7">' + r.pct_anomalias_treino + '%</div>' +
+        '<div style="font-size:12px;color:#8892b0">Anomalias Treino</div></div>' +
+      '<div style="background:#21253a;padding:16px;border-radius:8px;text-align:center">' +
+        '<div style="font-size:28px;font-weight:700;color:' + pctColor + '">' + pct + '%</div>' +
+        '<div style="font-size:12px;color:#8892b0">Anomalias Teste</div></div></div>' +
+    '<div style="font-size:13px;color:#8892b0;margin-bottom:16px">' + r.n_rubricas + ' rubricas | Treino: ' + r.n_treino + ' | Teste: ' + r.n_teste + '</div>' +
+    '<table style="width:100%;border-collapse:collapse">' +
+      '<thead><tr style="background:#21253a"><th style="padding:8px;text-align:left;font-size:12px;color:#8892b0">ISN</th><th style="padding:8px;text-align:left;font-size:12px;color:#8892b0">Meses</th><th style="padding:8px;text-align:left;font-size:12px;color:#8892b0">Score</th></tr></thead>' +
+      '<tbody>' + topRows + '</tbody></table></div>';
+  var tabMl = document.getElementById('tab-ml');
+  tabMl.innerHTML = html;
+  toast('✅ ML: ' + r.cargo + ' = ' + pct + '% anomalias', pct > 5 ? 'aviso' : 'ok');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+  console.log('[mostrarResultadoML] FIM - HTML injetado');
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
