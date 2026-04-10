@@ -284,10 +284,9 @@ def run_background(method, cargo, job_id):
         result = None
         if method == 'yoy':
             result = run_yoy(df_cargo, cargo)
-        elif method == 'cagr':
+        elif method in ('cagr', 'temporal'):
             result = run_cagr(df_cargo, cargo)
-        elif method == 'temporal':
-            result = run_cagr(df_cargo, cargo)  # mesmo de cagr por enquanto
+            result['method'] = method  # corrige: temporal usa cagr mas nomeia como temporal
         
         if result:
             # Salvar no cache
