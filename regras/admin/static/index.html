@@ -1150,36 +1150,35 @@ async function pollJob(jobId, cargo, method, btn) {
 function mostrarResultadoML(r) {
   var pct = r.pct_anomalias_teste;
   var pctColor = pct > 5 ? '#ef5350' : '#66bb6a';
-  var top = (r.top_vinculos_anomalos || []).slice(0, 8);
+  var top = (r.top_vinculos_anomalos || []).slice(0, 6);
   var topRows = '';
   if (top.length > 0) {
     top.forEach(function(v) {
-      topRows += '<tr><td style="padding:4px 6px;font-family:monospace;font-size:12px">' + v.isn_vinculo + '</td><td style="padding:4px 6px;font-size:12px;text-align:center">' + v.qtd_meses + '</td><td style="padding:4px 6px;font-size:12px;color:#ef5350;text-align:right">' + v.score_medio.toFixed(4) + '</td></tr>';
+      topRows += '<tr><td style="padding:3px 5px;font-family:monospace;font-size:11px">' + v.isn_vinculo + '</td><td style="padding:3px 5px;font-size:11px;text-align:center">' + v.qtd_meses + '</td><td style="padding:3px 5px;font-size:11px;color:#ef5350;text-align:right">' + v.score_medio.toFixed(4) + '</td></tr>';
     });
   } else {
-    topRows = '<tr><td colspan="3" style="padding:16px;text-align:center;color:#66bb6a;font-size:13px">✅ Nenhuma anomalia detectada</td></tr>';
+    topRows = '<tr><td colspan="3" style="padding:8px;text-align:center;color:#66bb6a;font-size:12px">✅ Nenhuma anomalia detectada</td></tr>';
   }
   var totalAnomalias = r.top_vinculos_anomalos ? r.top_vinculos_anomalos.length : 0;
-  var html = '<div style="background:#1a2a3a;border:2px solid #4fc3f7;border-radius:8px;padding:12px;margin-top:8px">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-      '<div style="font-size:14px;font-weight:700;color:#4fc3f7">Análise ML — ' + r.cargo + ' / ' + r.method + '</div>' +
-      '<button onclick="voltarFormML()" style="background:#21253a;color:#e0e0e0;border:1px solid #2a2f45;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px">← Voltar</button>' +
+  var html = '<div style="background:#1a2a3a;border:2px solid #4fc3f7;border-radius:6px;padding:8px;margin-top:4px;margin-bottom:0">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+      '<div style="font-size:13px;font-weight:700;color:#4fc3f7">ML ' + r.cargo + ' / ' + r.method + '</div>' +
+      '<button onclick="voltarFormML()" style="background:#21253a;color:#e0e0e0;border:1px solid #2a2f45;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px">← Voltar</button>' +
     '</div>' +
-    '<div style="font-size:11px;color:#8892b0;margin-bottom:8px">Treino: ' + (r.periodo_treino || '-') + ' &nbsp;|&nbsp; Teste: ' + (r.periodo_teste || '-') + '</div>' +
-    '<div style="display:flex;gap:8px;margin-bottom:8px">' +
-      '<div style="flex:1;background:#21253a;padding:8px;border-radius:6px;text-align:center">' +
-        '<div style="font-size:18px;font-weight:700;color:#4fc3f7">' + r.pct_anomalias_treino + '%</div>' +
-        '<div style="font-size:10px;color:#8892b0">Treino</div></div>' +
-      '<div style="flex:1;background:#21253a;padding:8px;border-radius:6px;text-align:center">' +
-        '<div style="font-size:18px;font-weight:700;color:' + pctColor + '">' + pct + '%</div>' +
-        '<div style="font-size:10px;color:#8892b0">Teste</div></div>' +
-      '<div style="flex:1;background:#21253a;padding:8px;border-radius:6px;text-align:center">' +
-        '<div style="font-size:18px;font-weight:700;color:#e0e0e0">' + r.n_rubricas + '</div>' +
-        '<div style="font-size:10px;color:#8892b0">Rubricas</div></div></div>' +
-    '<div style="font-size:10px;color:#8892b0;margin-bottom:4px">Top ' + top.length + ' anomalias (de ' + totalAnomalias + ' total) — Treino ' + r.n_treino + ' | Teste ' + r.n_teste + '</div>' +
-    '<div style="max-height:180px;overflow-y:auto;border:1px solid #2a2f45;border-radius:6px">' +
+    '<div style="display:flex;gap:6px;margin-bottom:6px">' +
+      '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center">' +
+        '<div style="font-size:14px;font-weight:700;color:#4fc3f7">' + r.pct_anomalias_treino + '%</div>' +
+        '<div style="font-size:9px;color:#8892b0">Treino</div></div>' +
+      '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center">' +
+        '<div style="font-size:14px;font-weight:700;color:' + pctColor + '">' + pct + '%</div>' +
+        '<div style="font-size:9px;color:#8892b0">Teste</div></div>' +
+      '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center">' +
+        '<div style="font-size:14px;font-weight:700;color:#e0e0e0">' + r.n_rubricas + '</div>' +
+        '<div style="font-size:9px;color:#8892b0">Rubricas</div></div></div>' +
+    '<div style="font-size:9px;color:#8892b0;margin-bottom:4px">Treino ' + r.n_treino + ' | Teste ' + r.n_teste + ' | ' + top.length + '/' + totalAnomalias + ' anomalias</div>' +
+    '<div style="max-height:140px;overflow-y:auto;border:1px solid #2a2f45;border-radius:4px">' +
     '<table style="width:100%;border-collapse:collapse">' +
-      '<thead><tr style="background:#21253a"><th style="padding:4px 6px;text-align:left;font-size:10px;color:#8892b0">ISN</th><th style="padding:4px 6px;text-align:center;font-size:10px;color:#8892b0">Mês</th><th style="padding:4px 6px;text-align:right;font-size:10px;color:#8892b0">Score</th></tr></thead>' +
+      '<thead><tr style="background:#21253a"><th style="padding:3px 5px;text-align:left;font-size:9px;color:#8892b0">ISN</th><th style="padding:3px 5px;text-align:center;font-size:9px;color:#8892b0">Mês</th><th style="padding:3px 5px;text-align:right;font-size:9px;color:#8892b0">Score</th></tr></thead>' +
       '<tbody>' + topRows + '</tbody></table></div></div>';
   var tabMl = document.getElementById('tab-ml');
   tabMl.innerHTML = html;
@@ -1191,25 +1190,18 @@ function voltarFormML() {
   var cargoValor = selCargo ? selCargo.value : 'P115';
   var cargos = window._cargos || [];
   showTab('ml');
-  // Reconstrói o form original
-  var formHtml = '<div class="stats" id="stats-ml">' +
-    '<div class="stat"><div class="stat-value" id="ml-cargos">' + cargos.length + '</div><div class="stat-label">Cargos Analisados</div></div>' +
-    '<div class="stat"><div class="stat-value" id="ml-metodos">3</div><div class="stat-label">Métodos ML</div></div>' +
-    '<div class="stat"><div class="stat-value" id="ml-anomalias-treino">—</div><div class="stat-label">% Anomalias Treino</div></div>' +
-    '<div class="stat"><div class="stat-value" id="ml-anomalias-teste">—</div><div class="stat-label">% Anomalias Teste</div></div></div>' +
-    '<div class="card"><div class="card-header"><div class="card-title">Selecionar Cargo</div></div>' +
-    '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">' +
-    '<select id="ml-cargo-select" onchange="carregarML()" style="flex:1;min-width:200px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;">' +
-    '</select>' +
-    '<select id="ml-metodo-select" onchange="carregarML()" style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;">' +
-    '<option value="yoy">YoY (Year-over-Year)</option><option value="ajustado">CAGR Ajustado</option><option value="temporal">Sem Ajuste</option></select>' +
-    '<button class="btn btn-primary" onclick="rodarML()">▶ Rodar ML</button></div></div>';
+  var formHtml = '<div style="margin-top:8px">' +
+    '<div class="card" style="margin-bottom:8px"><div class="card-header"><div class="card-title">Selecionar Cargo</div></div>' +
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px">' +
+    '<select id="ml-cargo-select" onchange="carregarML()" style="flex:1;min-width:160px;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px"></select>' +
+    '<select id="ml-metodo-select" onchange="carregarML()" style="padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">' +
+    '<option value="yoy">YoY</option><option value="ajustado">CAGR</option><option value="temporal">Sem Ajuste</option></select>' +
+    '<button class="btn btn-primary" onclick="rodarML()" style="padding:8px 16px;font-size:13px">▶ Rodar ML</button></div></div></div>';
   document.getElementById('tab-ml').innerHTML = formHtml;
-  // Repopula dropdown
   var newSel = document.getElementById('ml-cargo-select');
   if (newSel && cargos.length) {
     newSel.innerHTML = cargos.map(function(c) {
-      return '<option value="' + c.cargo + '">' + c.cargo + ' (' + c.n_registros.toLocaleString('pt-BR') + ' reg)</option>';
+      return '<option value="' + c.cargo + '">' + c.cargo + ' (' + c.n_registros.toLocaleString('pt-BR') + ')</option>';
     }).join('');
     newSel.value = cargoValor;
   }
