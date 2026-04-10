@@ -1,0 +1,344 @@
+[
+  {
+    "cargo": "A025",
+    "n_amostras": 93,
+    "n_rubricas": 1,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_A025.csv"
+  },
+  {
+    "cargo": "C015",
+    "n_amostras": 157,
+    "n_rubricas": 10,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_C015.csv"
+  },
+  {
+    "cargo": "C750",
+    "n_amostras": 69,
+    "n_rubricas": 2,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_C750.csv"
+  },
+  {
+    "cargo": "C826",
+    "n_amostras": 111,
+    "n_rubricas": 4,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_C826.csv"
+  },
+  {
+    "cargo": "D010",
+    "n_amostras": 1884,
+    "n_rubricas": 35,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 76,
+    "n_anomalias_teste": 27,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_D010.csv"
+  },
+  {
+    "cargo": "D010B",
+    "n_amostras": 718,
+    "n_rubricas": 30,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 29,
+    "n_anomalias_teste": 3,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_D010B.csv"
+  },
+  {
+    "cargo": "D044",
+    "n_amostras": 30,
+    "n_rubricas": 5,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_D044.csv"
+  },
+  {
+    "cargo": "D045",
+    "n_amostras": 361,
+    "n_rubricas": 23,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 15,
+    "n_anomalias_teste": 4,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_D045.csv"
+  },
+  {
+    "cargo": "D085",
+    "n_amostras": 335,
+    "n_rubricas": 8,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 14,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_D085.csv"
+  },
+  {
+    "cargo": "D085B",
+    "n_amostras": 329,
+    "n_rubricas": 30,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 14,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_D085B.csv"
+  },
+  {
+    "cargo": "D295",
+    "n_amostras": 94,
+    "n_rubricas": 6,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_D295.csv"
+  },
+  {
+    "cargo": "D383",
+    "n_amostras": 65,
+    "n_rubricas": 5,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_D383.csv"
+  },
+  {
+    "cargo": "D410",
+    "n_amostras": 99,
+    "n_rubricas": 8,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_D410.csv"
+  },
+  {
+    "cargo": "D413",
+    "n_amostras": 157,
+    "n_rubricas": 8,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_D413.csv"
+  },
+  {
+    "cargo": "D425",
+    "n_amostras": 422,
+    "n_rubricas": 5,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 16,
+    "n_anomalias_teste": 6,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_D425.csv"
+  },
+  {
+    "cargo": "E005",
+    "n_amostras": 639,
+    "n_rubricas": 21,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 25,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E005.csv"
+  },
+  {
+    "cargo": "E015",
+    "n_amostras": 597,
+    "n_rubricas": 14,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 23,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E015.csv"
+  },
+  {
+    "cargo": "E033",
+    "n_amostras": 211,
+    "n_rubricas": 7,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 9,
+    "n_anomalias_teste": 9,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E033.csv"
+  },
+  {
+    "cargo": "E084",
+    "n_amostras": 39,
+    "n_rubricas": 4,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E084.csv"
+  },
+  {
+    "cargo": "E175",
+    "n_amostras": 285,
+    "n_rubricas": 8,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 12,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E175.csv"
+  },
+  {
+    "cargo": "E210",
+    "n_amostras": 294,
+    "n_rubricas": 5,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 12,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E210.csv"
+  },
+  {
+    "cargo": "E285",
+    "n_amostras": 171,
+    "n_rubricas": 11,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 7,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E285.csv"
+  },
+  {
+    "cargo": "E350",
+    "n_amostras": 416,
+    "n_rubricas": 6,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 17,
+    "n_anomalias_teste": 23,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E350.csv"
+  },
+  {
+    "cargo": "E620",
+    "n_amostras": 235,
+    "n_rubricas": 15,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 10,
+    "n_anomalias_teste": 2,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E620.csv"
+  },
+  {
+    "cargo": "E644",
+    "n_amostras": 90,
+    "n_rubricas": 5,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E644.csv"
+  },
+  {
+    "cargo": "E667",
+    "n_amostras": 307,
+    "n_rubricas": 7,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 12,
+    "n_anomalias_teste": 15,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E667.csv"
+  },
+  {
+    "cargo": "E770",
+    "n_amostras": 1055,
+    "n_rubricas": 14,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 43,
+    "n_anomalias_teste": 10,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_E770.csv"
+  },
+  {
+    "cargo": "P105",
+    "n_amostras": 19853,
+    "n_rubricas": 45,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 795,
+    "n_anomalias_teste": 204,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_P105.csv"
+  },
+  {
+    "cargo": "P110",
+    "n_amostras": 21479,
+    "n_rubricas": 62,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 858,
+    "n_anomalias_teste": 201,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_P110.csv"
+  },
+  {
+    "cargo": "P115",
+    "n_amostras": 28939,
+    "n_rubricas": 69,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 1158,
+    "n_anomalias_teste": 371,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_P115.csv"
+  },
+  {
+    "cargo": "V005",
+    "n_amostras": 6715,
+    "n_rubricas": 13,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 260,
+    "n_anomalias_teste": 64,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_V005.csv"
+  },
+  {
+    "cargo": "V010",
+    "n_amostras": 5536,
+    "n_rubricas": 12,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 106,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_V010.csv"
+  },
+  {
+    "cargo": "W005",
+    "n_amostras": 3951,
+    "n_rubricas": 2,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 157,
+    "n_anomalias_teste": 92,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_W005.csv"
+  },
+  {
+    "cargo": "W010",
+    "n_amostras": 9276,
+    "n_rubricas": 7,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 0,
+    "n_anomalias_teste": 0,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_W010.csv"
+  },
+  {
+    "cargo": "Z105",
+    "n_amostras": 5763,
+    "n_rubricas": 45,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 230,
+    "n_anomalias_teste": 16,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_Z105.csv"
+  },
+  {
+    "cargo": "Z110",
+    "n_amostras": 16864,
+    "n_rubricas": 53,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 675,
+    "n_anomalias_teste": 166,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_Z110.csv"
+  },
+  {
+    "cargo": "Z120",
+    "n_amostras": 36189,
+    "n_rubricas": 69,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 1447,
+    "n_anomalias_teste": 306,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_Z120.csv"
+  },
+  {
+    "cargo": "Z120*",
+    "n_amostras": 211,
+    "n_rubricas": 6,
+    "yoy_validos_pct": 100.0,
+    "n_anomalias_treino": 9,
+    "n_anomalias_teste": 9,
+    "csv_path": "data/baseline_results_yoy/anomalias_yoy_Z120*.csv"
+  }
+]

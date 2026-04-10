@@ -1,0 +1,17 @@
+{
+	"name": "TensorFlow Dev Container",
+	"image": "tensorflow/tensorflow:latest-gpu",  // Altere para 'tensorflow/tensorflow:latest' se não usar GPU
+	"runArgs": [
+	  "--gpus", "all" // Isso garante que a GPU seja usada. Se não usar GPU, remova essa linha.
+	],
+	"postCreateCommand": "pip install --upgrade pip && pip install numpy pandas matplotlib",
+	"settings": {
+	  "terminal.integrated.shell.linux": "/bin/bash"
+	},
+	"extensions": [
+	  "ms-python.python",  // Extensão do Python para o VSCode
+	  "ms-toolsai.jupyter" // Suporte a notebooks Jupyter no VSCode
+	],
+	"remoteUser": "root"
+  }
+  

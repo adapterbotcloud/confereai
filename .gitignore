@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.csv
+!data/baseline_results/*
+models/
+plots/
+normalizacao_consolidada/
+.DS_Store
+*.log
