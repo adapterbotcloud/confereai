@@ -1142,11 +1142,17 @@ function mostrarResultadoML(r) {
   console.log('[mostrarResultadoML] INICIO, keys:', Object.keys(r).join(','));
   console.log('[mostrarResultadoML] cargo:', r.cargo, 'method:', r.method, 'pct_teste:', r.pct_anomalias_teste);
   var card = document.getElementById('card-ml-detalhe');
-  console.log('[mostrarResultadoML] card-ml-detalhe:', card ? 'EXISTE, display=' + getComputedStyle(card).display : 'NULL');
   card.style.display = 'block';
   card.style.border = '2px solid #4fc3f7';
   card.style.borderRadius = '12px';
-  setTimeout(function() { card.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 150);
+  card.style.background = '#1a2a3a';
+  card.style.padding = '20px';
+  card.style.position = 'relative';
+  card.style.zIndex = '10';
+  // Toast visivel
+  var pct = r.pct_anomalias_teste;
+  toast('✅ ML completo: ' + r.cargo + ' = ' + pct + '% anomalias', pct > 5 ? 'aviso' : 'ok');
+  setTimeout(function() { card.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 200);
   document.getElementById('ml-cargo-titulo').textContent = r.cargo + ' / ' + r.method;
   document.getElementById('ml-periodo-treino').textContent = r.periodo_treino || '-';
   document.getElementById('ml-periodo-teste').textContent = r.periodo_teste || '-';
