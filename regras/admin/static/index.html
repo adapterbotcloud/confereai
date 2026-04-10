@@ -1172,7 +1172,6 @@ function mostrarResultadoML(r) {
   tabMl.style.display = 'none';
   tabMl.offsetHeight; // trigger repaint
   tabMl.style.display = 'block';
-  toast('✅ ML: ' + r.cargo + ' = ' + pct + '% anomalias', pct > 5 ? 'aviso' : 'ok');
   window.scrollTo({top: 0, behavior: 'smooth'});
   console.log('[mostrarResultadoML] FIM - HTML injetado');
 }
