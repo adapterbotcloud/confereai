@@ -650,7 +650,7 @@ async function initApp() {
     </div>
 
     <!-- Resultado detalhado ML -->
-    <div class="card" id="card-ml-detalhe" style="display:none">
+    <div class="card" id="card-ml-detalhe">
       <div class="card-header">
         <div class="card-title">Análise ML — <span id="ml-cargo-titulo"></span></div>
         <div style="font-size:13px; color:var(--text-dim)">
@@ -1054,12 +1054,7 @@ function carregarCargosML() {
         `<option value="${c.cargo}">${c.cargo} (${c.n_registros.toLocaleString('pt-BR')} reg)</option>`
       ).join('');
       document.getElementById('ml-cargos').textContent = d.cargos.length;
-      // Mensagem inicial: aguargando clique no botao
-      document.getElementById('card-ml-detalhe').style.display = 'block';
-      document.getElementById('ml-cargo-titulo').textContent = 'Selecione um cargo';
-      document.getElementById('ml-pct-treino').textContent = '—';
-      document.getElementById('ml-pct-teste').textContent = '—';
-      document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:40px"><div style="font-size:36px; margin-bottom:8px">👆</div><div style="font-size:15px; font-weight:600">Clique em "Rodar ML" para analisar</div><div style="font-size:13px; color:var(--text-dim); margin-top:4px">Selecione um cargo no dropdown acima</div></td></tr>';
+      // Card ja visivel por padrao, placeholder ja existe no HTML
     });
 }
 
@@ -1073,15 +1068,12 @@ async function carregarML(skipCheck) {
   if (!cargo) return;
 
   // Mostra estado de carregamento usando o card original (se existir no DOM)
+  // Mostra placeholder de carregamento
   var cardDetalhe = document.getElementById('card-ml-detalhe');
   if (cardDetalhe) {
-    cardDetalhe.style.display = 'block';
     var titulo = document.getElementById('ml-cargo-titulo');
-    if (titulo) titulo.textContent = cargo + ' / ' + method;
-    var pTreino = document.getElementById('ml-pct-treino');
-    if (pTreino) pTreino.textContent = '...';
-    var pTeste = document.getElementById('ml-pct-teste');
-    if (pTeste) pTeste.textContent = '...';
+    if (titulo) titulo.textContent = (cargo + ' / ' + method) + ' — carregando...';
+    cardDetalhe.innerHTML = '<div class="card-header"><div class="card-title">Analise ML — ' + cargo + ' / ' + method + '</div></div><div style="padding:24px;text-align:center;color:var(--text-dim)"><div style="font-size:20px;margin-bottom:8px">Processando...</div><div style="font-size:13px">Isolation Forest em execucao</div></div>';
   }
 
   // Carrega comparacao de metodos
@@ -1151,13 +1143,12 @@ async function rodarML() {
   
   if (!data.ok) { toast('Erro: ' + data.erro, 'erro'); btn.disabled = false; btn.innerHTML = '▶ Rodar ML'; return; }
   
-  // Mostra loading no card
-  document.getElementById('card-ml-detalhe').style.display = 'block';
-  document.getElementById('ml-cargo-titulo').textContent = cargo + ' / ' + method;
-  document.getElementById('ml-pct-treino').textContent = '...';
-  document.getElementById('ml-pct-teste').textContent = '...';
-  document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:40px"><div class="loading" style="margin:0 auto 8px"></div><div style="font-size:14px">Processando Isolation Forest...</div></td></tr>';
-  
+  // Mostra loading no card (substitui conteudo)
+  var cardDetalhe = document.getElementById('card-ml-detalhe');
+  if (cardDetalhe) {
+    cardDetalhe.innerHTML = '<div class="card-header"><div class="card-title">Analise ML — ' + cargo + ' / ' + method + '</div></div><div style="padding:24px;text-align:center;color:var(--text-dim)"><div style="font-size:20px;margin-bottom:8px">Processando Isolation Forest...</div><div style="font-size:13px">Aguarde</div></div>';
+  }
+
   // Polling
   await pollJob(data.job_id, cargo, method, btn);
 }
@@ -1195,36 +1186,29 @@ function mostrarResultadoML(r) {
   try {
     var pct = r.pct_anomalias_teste;
     var pctColor = pct > 5 ? '#ef5350' : '#66bb6a';
-    var top = (r.top_vinculos_anomalos || []).slice(0, 6);
+    var top = (r.top_vinculos_anomalos || []).slice(0, 8);
+    var totalAnomalias = r.top_vinculos_anomalos ? r.top_vinculos_anomalos.length : 0;
     var topRows = '';
     if (top.length > 0) {
       top.forEach(function(v) {
-        topRows += '<tr><td style="padding:3px 5px;font-family:monospace;font-size:11px">' + v.isn_vinculo + '</td><td style="padding:3px 5px;font-size:11px;text-align:center">' + v.qtd_meses + '</td><td style="padding:3px 5px;font-size:11px;color:#ef5350;text-align:right">' + v.score_medio.toFixed(4) + '</td></tr>';
+        topRows += '<tr><td style="padding:4px 6px;font-family:monospace;font-size:12px">' + v.isn_vinculo + '</td><td style="padding:4px 6px;font-size:12px;text-align:center">' + v.qtd_meses + '</td><td style="padding:4px 6px;font-size:12px;color:#ef5350;text-align:right">' + v.score_medio.toFixed(4) + '</td></tr>';
       });
     } else {
-      topRows = '<tr><td colspan="3" style="padding:8px;text-align:center;color:#66bb6a;font-size:12px">Sem anomalias detectadas</td></tr>';
+      topRows = '<tr><td colspan="3" style="padding:16px;text-align:center;color:#66bb6a">Sem anomalias detectadas</td></tr>';
     }
-    var totalAnomalias = r.top_vinculos_anomalos ? r.top_vinculos_anomalos.length : 0;
-    var html = '<div style="background:#1a2a3a;border:2px solid #4fc3f7;border-radius:6px;padding:8px;margin-top:4px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
-        '<div style="font-size:13px;font-weight:700;color:#4fc3f7">ML ' + r.cargo + ' / ' + r.method + '</div>' +
-        '<button onclick="voltarFormML()" style="background:#21253a;color:#e0e0e0;border:1px solid #2a2f45;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px">← Voltar</button>' +
-      '</div>' +
-      '<div style="display:flex;gap:6px;margin-bottom:6px">' +
-        '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center"><div style="font-size:14px;font-weight:700;color:#4fc3f7">' + r.pct_anomalias_treino + '%</div><div style="font-size:9px;color:#8892b0">Treino</div></div>' +
-        '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center"><div style="font-size:14px;font-weight:700;color:' + pctColor + '">' + pct + '%</div><div style="font-size:9px;color:#8892b0">Teste</div></div>' +
-        '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center"><div style="font-size:14px;font-weight:700;color:#e0e0e0">' + r.n_rubricas + '</div><div style="font-size:9px;color:#8892b0">Rubricas</div></div>' +
-      '</div>' +
-      '<div style="font-size:9px;color:#8892b0;margin-bottom:4px">Treino ' + r.n_treino + ' | Teste ' + r.n_teste + ' | ' + top.length + '/' + totalAnomalias + ' anomalias</div>' +
-      '<div style="max-height:140px;overflow-y:auto;border:1px solid #2a2f45;border-radius:4px">' +
-      '<table style="width:100%;border-collapse:collapse">' +
-        '<thead><tr style="background:#21253a"><th style="padding:3px 5px;text-align:left;font-size:9px;color:#8892b0">ISN</th><th style="padding:3px 5px;text-align:center;font-size:9px;color:#8892b0">Mes</th><th style="padding:3px 5px;text-align:right;font-size:9px;color:#8892b0">Score</th></tr></thead>' +
-        '<tbody>' + topRows + '</tbody></table></div></div>';
-    var tabMl = document.getElementById('tab-ml');
-    if (!tabMl) { console.error('[mostrarResultadoML] ERRO: tab-ml nao existe!'); return; }
-    console.log('[mostrarResultadoML] injetando HTML');
-    tabMl.innerHTML = html;
-    console.log('[mostrarResultadoML] OK');
+    var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">' +
+      '<div style="background:var(--card2);border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--accent)">' + r.pct_anomalias_treino + '%</div><div style="font-size:12px;color:var(--text-dim)">% Anomalias Treino</div></div>' +
+      '<div style="background:var(--card2);border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:700;color:' + pctColor + '">' + pct + '%</div><div style="font-size:12px;color:var(--text-dim)">% Anomalias Teste</div></div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px">' + r.n_rubricas + ' rubricas | Treino ' + r.n_treino + ' | Teste ' + r.n_teste + ' | ' + top.length + ' de ' + totalAnomalias + ' anomalias</div>' +
+    '<div style="max-height:160px;overflow-y:auto"><table style="width:100%;border-collapse:collapse">' +
+      '<thead><tr style="background:var(--card2)"><th style="padding:4px 6px;text-align:left;font-size:11px;color:var(--text-dim)">ISN</th><th style="padding:4px 6px;text-align:center;font-size:11px;color:var(--text-dim)">Mes</th><th style="padding:4px 6px;text-align:right;font-size:11px;color:var(--text-dim)">Score</th></tr></thead>' +
+      '<tbody>' + topRows + '</tbody></table></div>';
+    var card = document.getElementById('card-ml-detalhe');
+    if (!card) { console.error('[mostrarResultadoML] ERRO: card-ml-detalhe nao existe!'); return; }
+    var newCardHtml = '<div class="card-header"><div class="card-title">Analise ML — ' + r.cargo + ' / ' + r.method + '</div></div><div style="padding:12px">' + html + '</div>';
+    card.innerHTML = newCardHtml;
+    console.log('[mostrarResultadoML] OK - card populado');
   } catch(e) {
     console.error('[mostrarResultadoML] ERRO:', e.message);
   }
@@ -1232,69 +1216,13 @@ function mostrarResultadoML(r) {
 
 function voltarFormML() {
   showTab('ml');
-  var cargoValor = window._lastCargo || (document.getElementById('ml-cargo-select') || {}).value || 'P115';
-  console.log('[voltarFormML] cargoValor:', cargoValor);
-  var cargos = window._cargos || [];
-  var sorted = [...cargos].sort(function(a,b){ return b.n_registros - a.n_registros; });
-
-  // Reconstroi o HTML original completo do tab-ml (pq mostrarResultadoML apagou tudo)
-  var nCargos = cargos.length;
-  var formHtml =
-    '<div class="stats" id="stats-ml">' +
-      '<div class="stat"><div class="stat-value" id="ml-cargos">' + nCargos + '</div><div class="stat-label">Cargos Analisados</div></div>' +
-      '<div class="stat"><div class="stat-value">3</div><div class="stat-label">Metodos ML</div></div>' +
-      '<div class="stat"><div class="stat-value" id="ml-anomalias-treino">—</div><div class="stat-label">% Anomalias Treino</div></div>' +
-      '<div class="stat"><div class="stat-value" id="ml-anomalias-teste">—</div><div class="stat-label">% Anomalias Teste</div></div>' +
-    '</div>' +
-    '<div class="card">' +
-      '<div class="card-header"><div class="card-title">Selecionar Cargo</div></div>' +
-      '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
-        '<select id="ml-cargo-select" onchange="carregarML(false)" style="flex:1;min-width:200px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px"></select>' +
-        '<select id="ml-metodo-select" onchange="carregarML(false)" style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px">' +
-          '<option value="yoy">YoY (Year-over-Year)</option><option value="ajustado">CAGR Ajustado</option><option value="temporal">Sem Ajuste</option>' +
-        '</select>' +
-        '<button class="btn btn-primary" onclick="rodarML()">▶ Rodar ML</button>' +
-      '</div>' +
-    '</div>' +
-    '<div class="card" id="card-comparacao" style="display:none">' +
-      '<div class="card-header"><div class="card-title">Comparacao de Metodos — <span id="comp-cargo"></span></div></div>' +
-      '<table><thead><tr><th>Metodo</th><th>% Anomalias Teste</th><th>Score Medio</th><th></th></tr></thead><tbody id="comp-table"></tbody></table>' +
-    '</div>' +
-    '<div class="card" id="card-ml-detalhe" style="display:none">' +
-      '<div class="card-header"><div class="card-title">Analise ML — <span id="ml-cargo-titulo"></span></div></div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
-        '<div style="background:var(--card2);border-radius:8px;padding:16px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--accent)" id="ml-pct-treino">—</div><div style="font-size:13px;color:var(--text-dim)">% Anomalias Treino</div></div>' +
-        '<div style="background:var(--card2);border-radius:8px;padding:16px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--red)" id="ml-pct-teste">—</div><div style="font-size:13px;color:var(--text-dim)">% Anomalias Teste</div></div>' +
-      '</div>' +
-      '<div style="font-size:13px;color:var(--text-dim);margin-bottom:12px">📊 <span id="ml-n-rubricas"></span> rubricas | Treino: <span id="ml-n-treino"></span> | Teste: <span id="ml-n-teste"></span></div>' +
-      '<div class="card-title" style="margin-bottom:8px">Vinculos Mais Anomalos (Top 20 no Teste)</div>' +
-      '<div style="overflow-x:auto"><table><thead><tr><th>Vinculo</th><th>Qtd Meses Anomalo</th><th>Score Medio</th></tr></thead><tbody id="ml-table-body"></tbody></table></div>' +
-    '</div>';
-
-  document.getElementById('tab-ml').innerHTML = formHtml;
-
-  // Repoe dropdown de cargos
-  // Repoe dropdown e mostra card de placeholder
-  window._restoringML = true;
-  var selCargo = document.getElementById('ml-cargo-select');
-  if (selCargo && cargos.length) {
-    // Reconstrói options COM selected já setado (mais confiável que .value depois)
-    var opts = sorted.map(function(c) {
-      return '<option value="' + c.cargo + '"' + (c.cargo === cargoValor ? ' selected' : '') + '>' + c.cargo + ' (' + c.n_registros.toLocaleString('pt-BR') + ' reg)</option>';
-    }).join('');
-    selCargo.innerHTML = opts;
-  }
-  // Mostra card-ml-detalhe com placeholder ANTES de reabilitar ML
+  // Reseta card-ml-detalhe para placeholder
   var card = document.getElementById('card-ml-detalhe');
-  if (card) { card.style.display = 'block'; }
-  var titulo = document.getElementById('ml-cargo-titulo');
-  if (titulo) titulo.textContent = 'Selecione um cargo';
-  var pt = document.getElementById('ml-pct-treino'); if (pt) pt.textContent = '—';
-  var ps = document.getElementById('ml-pct-teste'); if (ps) ps.textContent = '—';
-  var pr = document.getElementById('ml-n-rubricas'); if (pr) pr.textContent = '—';
-  var pn = document.getElementById('ml-n-treino'); if (pn) pn.textContent = '—';
-  var pte = document.getElementById('ml-n-teste'); if (pte) pte.textContent = '—';
-  window._restoringML = false;
+  if (card) {
+    card.innerHTML = '<div class="card-header"><div class="card-title">Analise ML — <span id="ml-cargo-titulo">Selecione um cargo</span></div></div><div style="padding:24px;text-align:center;color:var(--text-dim)"><div style="font-size:28px;margin-bottom:8px">👆</div><div style="font-size:14px">Selecione um cargo e clique em "Rodar ML"</div></div>';
+  }
+  var compCard = document.getElementById('card-comparacao');
+  if (compCard) compCard.style.display = 'none';
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
