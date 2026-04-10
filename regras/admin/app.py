@@ -1,508 +1,389 @@
 #!/usr/bin/env python3
 """
-API Flask para o Admin de Regras do ConfereAI.
-Roda em localhost:5001 por padrão.
+Admin de Regras do ConfereAI — FastAPI
+Roda em localhost:5001
 
-Endpoints:
-  GET  /api/regras              - Lista todas as regras
-  POST /api/regras              - Adiciona regra
-  PUT  /api/regras/<id>         - Atualiza regra
-  DELETE /api/regras/<id>        - Remove regra
-  POST /api/regras/testar        - Testa regras contra dados
-  GET  /api/regras/validar       - Valida estrutura do JSON
-  GET  /api/dados/resumo         - Resumo dos dados (para teste)
+Autenticacao via token signed (HMAC-SHA256).
+O token e enviado no header Authorization: Bearer <token>.
 """
 
 import json
-import subprocess
 import secrets
 from pathlib import Path
-from functools import wraps
-from flask import Flask, request, jsonify, send_from_directory, session
-from flask_cors import CORS
+from datetime import datetime, timedelta
 
-app = Flask(__name__, static_folder='static')
-app.secret_key = secrets.token_hex(32)
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-CORS(app, supports_credentials=True)
+from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
-REGRAS_FILE = Path(__file__).parent.parent / 'regras_ativos.json'
-DATA_FILE = Path(__file__).parent.parent.parent / 'data' / 'historico_5_seplag.csv'
-VALID_USER = 'admin'
-VALID_PASS = '123admin#'
+# ─── App ───────────────────────────────────────────────────────────────────────
+app = FastAPI(title="ConfereAI Admin", docs_url=None, redoc_url=None)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-def require_auth(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if not session.get('authenticated'):
-            return jsonify({'erro': 'Nao autenticado'}), 401
-        return f(*args, **kwargs)
-    return decorated
+# ─── Auth ──────────────────────────────────────────────────────────────────────
+SECRET_KEY = secrets.token_hex(32)
+TOKEN_MAX_AGE = 60 * 60 * 24  # 24h
+serializer = URLSafeTimedSerializer(SECRET_KEY)
 
+VALID_USER = "admin"
+VALID_PASS = "123admin#"
 
-@app.route('/api/login', methods=['POST'])
-def api_login():
-    data = request.json or {}
-    user = data.get('user', '')
-    pw = data.get('pass', '')
-    if user == VALID_USER and pw == VALID_PASS:
-        session['authenticated'] = True
-        session.permanent = True
-        return jsonify({'ok': True, 'user': user})
-    return jsonify({'ok': False, 'erro': 'Credenciais invalidas'}), 401
+# In-memory invalidation (set to token when logout)
+invalidated_tokens: set = set()
 
 
-@app.route('/api/logout', methods=['POST'])
-def api_logout():
-    session.clear()
-    return jsonify({'ok': True})
+def create_token() -> str:
+    return serializer.dumps(VALID_USER)
 
 
-@app.route('/api/me', methods=['GET'])
-def api_me():
-    if session.get('authenticated'):
-        return jsonify({'user': VALID_USER, 'authenticated': True})
-    return jsonify({'authenticated': False})
+def verify_token(token: str) -> bool:
+    if token in invalidated_tokens:
+        return False
+    try:
+        data = serializer.loads(token, max_age=TOKEN_MAX_AGE)
+        return data == VALID_USER
+    except (BadSignature, SignatureExpired):
+        return False
+
+
+def get_token(request: Request) -> str:
+    """Extract token from Authorization: Bearer <token> header."""
+    auth = request.headers.get("authorization", "")
+    if auth.startswith("Bearer "):
+        return auth[7:]
+    return ""
+
+
+def require_auth(request: Request) -> None:
+    """Dependency: raises 401 if not authenticated."""
+    token = get_token(request)
+    if not token or not verify_token(token):
+        raise HTTPException(status_code=401, detail="Nao autenticado")
+
+
+# ─── Files ─────────────────────────────────────────────────────────────────────
+REGRAS_FILE = Path(__file__).parent.parent / "regras_ativos.json"
+DATA_FILE = Path(__file__).parent.parent.parent / "data" / "historico_5_seplag.csv"
 
 
 def carregar_regras():
-    with open(REGRAS_FILE, 'r', encoding='utf-8') as f:
+    with open(REGRAS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def salvar_regras(data):
-    with open(REGRAS_FILE, 'w', encoding='utf-8') as f:
+    with open(REGRAS_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-@app.route('/')
-def index():
-    return send_from_directory('static', 'index.html')
+# ─── Rotas Estaticas ───────────────────────────────────────────────────────────
+@app.get("/")
+async def index():
+    return FileResponse("static/index.html")
 
 
-# ─── API DE REGRAS ────────────────────────────────────────────────────────────
+# ─── Auth ─────────────────────────────────────────────────────────────────────
+@app.post("/api/login")
+async def login(body: dict):
+    user = body.get("user", "")
+    pw = body.get("pass", "")
+    if user == VALID_USER and pw == VALID_PASS:
+        token = create_token()
+        return {"ok": True, "user": user, "token": token}
+    return JSONResponse({"ok": False, "erro": "Credenciais invalidas"}, status_code=401)
 
-@require_auth
-@app.route('/api/regras', methods=['GET'])
-def listar_regras():
+
+@app.post("/api/logout")
+async def logout(request: Request):
+    token = get_token(request)
+    if token:
+        invalidated_tokens.add(token)
+    return {"ok": True}
+
+
+@app.get("/api/me")
+async def me(request: Request):
+    token = get_token(request)
+    if token and verify_token(token):
+        return {"user": VALID_USER, "authenticated": True}
+    return {"authenticated": False}
+
+
+# ─── API de Regras ─────────────────────────────────────────────────────────────
+@app.get("/api/regras")
+async def listar_regras(request: Request):
+    require_auth(request)
     data = carregar_regras()
-    return jsonify(data)
+    return data
 
 
-@require_auth
-@app.route('/api/regras', methods=['POST'])
-def adicionar_regra():
+@app.post("/api/regras")
+async def adicionar_regra(request: Request, body: dict):
+    require_auth(request)
     data = carregar_regras()
-    nova = request.json
-    
-    # Gerar ID automático
-    existentes = [int(r['id'][1:]) for r in data['regras'] if r['id'].startswith('R')]
+    existentes = [int(r["id"][1:]) for r in data["regras"] if r["id"].startswith("R")]
     novo_id = max(existentes) + 1 if existentes else 1
-    nova['id'] = f'R{novo_id:03d}'
-    
-    data['regras'].append(nova)
-    data['_ultima_alteracao'] = '2026-04-10'
+    body["id"] = f"R{novo_id:03d}"
+    data["regras"].append(body)
+    data["_ultima_alteracao"] = "2026-04-10"
     salvar_regras(data)
-    
-    return jsonify({'ok': True, 'regra': nova}), 201
+    return {"ok": True, "regra": body}
 
 
-@require_auth
-@app.route('/api/regras/<regra_id>', methods=['PUT'])
-def atualizar_regra(regra_id):
+@app.put("/api/regras/{regra_id}")
+async def atualizar_regra(regra_id: str, request: Request, body: dict):
+    require_auth(request)
     data = carregar_regras()
-    atualizada = request.json
-    
-    for i, r in enumerate(data['regras']):
-        if r['id'] == regra_id:
-            atualizada['id'] = regra_id
-            data['regras'][i] = atualizada
-            data['_ultima_alteracao'] = '2026-04-10'
+    for i, r in enumerate(data["regras"]):
+        if r["id"] == regra_id:
+            body["id"] = regra_id
+            data["regras"][i] = body
+            data["_ultima_alteracao"] = "2026-04-10"
             salvar_regras(data)
-            return jsonify({'ok': True, 'regra': atualizada})
-    
-    return jsonify({'ok': False, 'erro': 'Regra não encontrada'}), 404
+            return {"ok": True, "regra": body}
+    return JSONResponse({"ok": False, "erro": "Regra nao encontrada"}, status_code=404)
 
 
-@require_auth
-@app.route('/api/regras/<regra_id>', methods=['DELETE'])
-def remover_regra(regra_id):
+@app.delete("/api/regras/{regra_id}")
+async def remover_regra(regra_id: str, request: Request):
+    require_auth(request)
     data = carregar_regras()
-    
-    antes = len(data['regras'])
-    data['regras'] = [r for r in data['regras'] if r['id'] != regra_id]
-    
-    if len(data['regras']) == antes:
-        return jsonify({'ok': False, 'erro': 'Regra não encontrada'}), 404
-    
-    data['_ultima_alteracao'] = '2026-04-10'
+    antes = len(data["regras"])
+    data["regras"] = [r for r in data["regras"] if r["id"] != regra_id]
+    if len(data["regras"]) == antes:
+        return JSONResponse({"ok": False, "erro": "Regra nao encontrada"}, status_code=404)
+    data["_ultima_alteracao"] = "2026-04-10"
     salvar_regras(data)
-    
-    return jsonify({'ok': True})
+    return {"ok": True}
 
 
-# ─── TESTAR REGRAS ─────────────────────────────────────────────────────────────
-
-@require_auth
-@app.route('/api/regras/testar', methods=['POST'])
-def testar_regras():
-    """Roda as regras ativas contra os dados de folha."""
+# ─── Testar / Validar ──────────────────────────────────────────────────────────
+@app.post("/api/regras/testar")
+async def testar_regras(request: Request):
+    require_auth(request)
     import pandas as pd
-    
+
     try:
-        df = pd.read_csv(DATA_FILE, delimiter=';', dtype=str, encoding='utf-8')
+        df = pd.read_csv(DATA_FILE, delimiter=";", dtype=str, encoding="utf-8")
         for col in df.columns:
             df[col] = df[col].str.strip().str.strip('"')
-        df['vlr_calculado'] = pd.to_numeric(df['vlr_calculado'], errors='coerce')
+        df["vlr_calculado"] = pd.to_numeric(df["vlr_calculado"], errors="coerce")
     except Exception as e:
-        return jsonify({'ok': False, 'erro': f'Erro ao carregar dados: {e}'}), 500
-    
+        return JSONResponse({"ok": False, "erro": f"Erro ao carregar dados: {e}"}, status_code=500)
+
     regras_data = carregar_regras()
     todas_violacoes = []
-    
+
     SITUACAO_MAP = {
-        '0': 'Civil Ativo', '1': 'Militar Ativo',
-        '2': 'Civil Afastado c/ onus', '3': 'Militar Afastado c/ onus',
-        '4': 'Civil Afastado', '5': 'Militar Afastado',
-        '6': 'Pensionista', '7': 'Pensao Alimento', '8': 'Liminar',
+        "0": "Civil Ativo", "1": "Militar Ativo",
+        "2": "Civil Afastado c/ onus", "3": "Militar Afastado c/ onus",
+        "4": "Civil Afastado", "5": "Militar Afastado",
+        "6": "Pensionista", "7": "Pensao Alimento", "8": "Liminar",
     }
-    df['dsc_situacao'] = df['cod_situacao_funcional'].map(SITUACAO_MAP).fillna(df['cod_situacao_funcional'])
-    
-    for regra in regras_data['regras']:
-        if regra.get('status') != 'ativa':
+    df["dsc_situacao"] = df["cod_situacao_funcional"].map(SITUACAO_MAP).fillna(df["cod_situacao_funcional"])
+
+    for regra in regras_data.get("regras", []):
+        if regra.get("status") != "ativa":
             continue
-        
-        situacoes = regra.get('situacao_funcional', [])
-        rubricas_contem = regra.get('rubrica_contem', [])
-        rubricas_nao_contem = regra.get('rubrica_nao_contem', [])
-        
-        # Condicao: situacao_funcional
-        mask = df['cod_situacao_funcional'].isin(situacoes) if situacoes else pd.Series(True, index=df.index)
-        
-        # Condicao: rubrica_contem (qualquer um dos termos)
+        situacoes = regra.get("situacao_funcional", [])
+        rubricas_contem = regra.get("rubrica_contem", [])
+        rubricas_nao_contem = regra.get("rubrica_nao_contem", [])
+
+        mask = df["cod_situacao_funcional"].isin(situacoes) if situacoes else pd.Series(True, index=df.index)
+
         if rubricas_contem:
-            def contem(texto, termos):
-                if pd.isna(texto):
-                    return False
-                return any(t.upper() in str(texto).upper() for t in termos)
-            mask_rubrica = df['dsc_rubrica'].apply(lambda x: contem(x, rubricas_contem))
-            mask = mask & mask_rubrica
-        
-        # Condicao: rubrica_nao_contem (NONE dos termos)
+            mask_rub = df["dsc_rubrica"].apply(
+                lambda x: pd.notna(x) and any(t.upper() in str(x).upper() for t in rubricas_contem)
+            )
+            mask = mask & mask_rub
+
         if rubricas_nao_contem:
-            def nao_contem(texto, termos):
-                if pd.isna(texto):
-                    return True
-                return not any(t.upper() in str(texto).upper() for t in termos)
-            mask_nao = df['dsc_rubrica'].apply(lambda x: nao_contem(x, rubricas_nao_contem))
+            mask_nao = df["dsc_rubrica"].apply(
+                lambda x: pd.notna(x) and not any(t.upper() in str(x).upper() for t in rubricas_nao_contem)
+            )
             mask = mask & mask_nao
-        
+
         violacoes = df[mask]
         if len(violacoes) > 0:
-            grupo = violacoes.groupby(['isn_vinculo', 'dsc_rubrica', 'dsc_situacao'])['vlr_calculado'].agg(['count', 'sum']).reset_index()
-            grupo['regra_id'] = regra['id']
-            grupo['regra_nome'] = regra['nome']
-            grupo.columns = ['isn_vinculo', 'dsc_rubrica', 'dsc_situacao', 'qtd', 'vlr_total', 'regra_id', 'regra_nome']
+            grupo = violacoes.groupby(["isn_vinculo", "dsc_rubrica", "dsc_situacao"])["vlr_calculado"].agg(["count", "sum"]).reset_index()
+            grupo["regra_id"] = regra["id"]
+            grupo["regra_nome"] = regra["nome"]
+            grupo.columns = ["isn_vinculo", "dsc_rubrica", "dsc_situacao", "qtd", "vlr_total", "regra_id", "regra_nome"]
             todas_violacoes.append(grupo)
-    
+
     if todas_violacoes:
         resultado = pd.concat(todas_violacoes, ignore_index=True)
-        resultado = resultado.sort_values('vlr_total', ascending=False)
-        return jsonify({
-            'ok': True,
-            'total_vinculos': int(resultado['isn_vinculo'].nunique()),
-            'total_violacoes': int(len(resultado)),
-            'valor_total': float(resultado['vlr_total'].sum()),
-            'por_regra': resultado.groupby('regra_id').agg(
-                qtd=('qtd','sum'), vlr_total=('vlr_total','sum'), regra_nome=('regra_nome','first')
-            ).to_dict('records'),
-            'detalhes': resultado.head(50).to_dict('records'),
-        })
-    
-    return jsonify({'ok': True, 'total_vinculos': 0, 'total_violacoes': 0, 'valor_total': 0, 'por_regra': [], 'detalhes': []})
+        resultado = resultado.sort_values("vlr_total", ascending=False)
+        return {
+            "ok": True,
+            "total_vinculos": int(resultado["isn_vinculo"].nunique()),
+            "total_violacoes": int(len(resultado)),
+            "valor_total": float(resultado["vlr_total"].sum()),
+            "por_regra": resultado.groupby("regra_id").agg(
+                qtd=("qtd", "sum"), vlr_total=("vlr_total", "sum"), regra_nome=("regra_nome", "first")
+            ).to_dict("records"),
+            "detalhes": resultado.head(50).to_dict("records"),
+        }
+    return {"ok": True, "total_vinculos": 0, "total_violacoes": 0, "valor_total": 0, "por_regra": [], "detalhes": []}
 
 
-@require_auth
-@app.route('/api/regras/validar', methods=['GET'])
-def validar_regras():
-    """Valida a estrutura do JSON de regras."""
+@app.get("/api/regras/validar")
+async def validar_regras(request: Request):
+    require_auth(request)
     regras_data = carregar_regras()
     erros = []
-    
-    required = ['id', 'nome', 'descricao', 'situacao_funcional', 'rubrica_contem', 'rubrica_nao_contem', 'acao', 'severidade', 'status']
-    
-    for i, regra in enumerate(regras_data.get('regras', [])):
+    required = ["id", "nome", "descricao", "situacao_funcional", "rubrica_contem", "rubrica_nao_contem", "acao", "severidade", "status"]
+    for regra in regras_data.get("regras", []):
         for campo in required:
             if campo not in regra:
                 erros.append(f"Regra {regra.get('id','?')} - campo '{campo}' faltando")
-    
     if not erros:
-        return jsonify({'ok': True, 'valido': True, 'mensagem': 'Estrutura valida'})
-    return jsonify({'ok': True, 'valido': False, 'erros': erros})
+        return {"ok": True, "valido": True, "mensagem": "Estrutura valida"}
+    return {"ok": True, "valido": False, "erros": erros}
 
 
-# ─── DADOS RESUMO ──────────────────────────────────────────────────────────────
-
-@require_auth
-@app.route('/api/dados/resumo', methods=['GET'])
-def dados_resumo():
-    """Resumo dos dados de folha para contexto."""
+# ─── Dados Resumo ─────────────────────────────────────────────────────────────
+@app.get("/api/dados/resumo")
+async def dados_resumo(request: Request):
+    require_auth(request)
     import pandas as pd
-    
     try:
-        df = pd.read_csv(DATA_FILE, delimiter=';', dtype=str, encoding='utf-8', nrows=1000)
+        df = pd.read_csv(DATA_FILE, delimiter=";", dtype=str, encoding="utf-8", nrows=1000)
         for col in df.columns:
             df[col] = df[col].str.strip().str.strip('"')
-        
-        situacoes = df['cod_situacao_funcional'].value_counts().to_dict()
-        rubricas = df['dsc_rubrica'].nunique()
-        cargos = df['cod_cargo'].nunique()
-        
-        return jsonify({
-            'ok': True,
-            'amostra': len(df),
-            'situacoes_funcionais': situacoes,
-            'rubricas_unicas': rubricas,
-            'cargos_unicos': cargos,
-        })
+        situacoes = df["cod_situacao_funcional"].value_counts().to_dict()
+        return {
+            "ok": True,
+            "amostra": len(df),
+            "situacoes_funcionais": situacoes,
+            "rubricas_unicas": int(df["dsc_rubrica"].nunique()),
+            "cargos_unicos": int(df["cod_cargo"].nunique()),
+        }
     except Exception as e:
-        return jsonify({'ok': False, 'erro': str(e)}), 500
+        return JSONResponse({"ok": False, "erro": str(e)}, status_code=500)
 
 
+# ─── ML Inline ────────────────────────────────────────────────────────────────
+@app.get("/api/ml/cargos")
+async def ml_cargos(request: Request):
+    require_auth(request)
+    import pandas as pd
+    df = pd.read_csv(DATA_FILE, delimiter=";", dtype=str)
+    for col in df.columns:
+        df[col] = df[col].str.strip().str.strip('"')
+    counts = df.groupby("cod_cargo").size().reset_index(name="n_registros")
+    counts = counts.sort_values("n_registros", ascending=False)
+    return {
+        "cargos": [
+            {"cargo": row["cod_cargo"], "n_registros": int(row["n_registros"]), "method": "yoy"}
+            for _, row in counts.iterrows()
+        ]
+    }
 
-# ─── API DE ML ──────────────────────────────────────────────────────────────
 
-@require_auth
-@app.route('/api/ml/resumo', methods=['GET'])
-def ml_resumo():
-    """Retorna resumo de todos os métodos ML disponíveis."""
-    import os, json
+@app.get("/api/ml/carregar_cache")
+async def ml_carregar_cache(request: Request, method: str = "yoy", cargo: str = "P115"):
+    require_auth(request)
     from pathlib import Path
-    
-    methods = []
-    for method in ['yoy', 'ajustado', 'temporal']:
-        base = Path(__file__).parent.parent.parent / 'data' / f'baseline_results_{method}'
-        resumo_file = base / f'resumo_{method}.json'
-        
-        if resumo_file.exists():
-            methods.append({
-                'method': method,
-                'label': {
-                    'yoy': 'YoY Year-over-Year',
-                    'ajustado': 'CAGR Ajustado',
-                    'temporal': 'Temporal (baseline)',
-                }.get(method, method),
-                'path': str(resumo_file),
-            })
-    
-    return jsonify({'methods': methods})
+    cache_file = Path(__file__).parent.parent.parent / "data" / "ml_cache" / f"{method}_{cargo}.json"
+    if cache_file.exists():
+        with open(cache_file) as f:
+            return {"ok": True, "source": "cache", "data": json.load(f)}
+
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
+    from ml_inline import start_job
+    job_id = start_job(method, cargo)
+    return {"ok": True, "source": "compute", "job_id": job_id, "status": "running"}
 
 
-@require_auth
-@app.route('/api/ml/resultados', methods=['GET'])
-def ml_resultados():
-    """Retorna resultados consolidados de todos os métodos."""
+@app.get("/api/ml/comparar")
+async def ml_comparar(request: Request, cargo: str = "P115"):
+    require_auth(request)
     import pandas as pd
     from pathlib import Path
-    
-    cargo = request.args.get('cargo', 'P115')
-    method = request.args.get('method', 'yoy')
-    
-    base = Path(__file__).parent.parent.parent / 'data' / f'baseline_results_{method}'
-    csv_file = base / f'anomalias_{method}_{cargo}.csv'
-    
-    if not csv_file.exists():
-        return jsonify({'ok': False, 'erro': f'Arquivo nao encontrado: {cargo}'}), 404
-    
-    df = pd.read_csv(csv_file, delimiter=';', encoding='utf-8')
-    
-    cols_rub = [c for c in df.columns if c not in ['isn_vinculo','num_ano','num_mes','IF_label','IF_score','anomalo']]
-    
-    n_total = len(df)
-    n_treino = int(n_total * 0.8)
-    df_treino = df.iloc[:n_treino]
-    df_teste = df.iloc[n_treino:]
-    
-    if 'IF_score' in df.columns:
-        df_sorted = df_teste.sort_values('IF_score', ascending=True)
-        
-        # Vínculos mais anômalos (score mais negativo)
-        anom = df_sorted[df_sorted['anomalo'] == 1]
-        
-        if len(anom) > 0:
-            agg_cols = [c for c in cols_rub if not c.endswith('_yoy')]
-            vals = df_sorted[df_sorted['anomalo'] == 1][agg_cols].mean(axis=1).values
-            top = anom.groupby('isn_vinculo').agg(
-                qtd_meses=('anomalo', 'count'),
-                score_medio=('IF_score', 'mean'),
-            ).reset_index().sort_values('score_medio', ascending=True).head(20)
-            top['score_medio'] = top['score_medio'].round(4)
-            top = top.to_dict('records')
-        else:
-            top = []
-        
-        return jsonify({
-            'ok': True,
-            'cargo': cargo,
-            'method': method,
-            'n_treino': n_treino,
-            'n_teste': len(df_teste),
-            'periodo_treino': f"{int(df_treino.num_ano.min())}/{int(df_treino.num_mes.min())} - {int(df_treino.num_ano.max())}/{int(df_treino.num_mes.max())}",
-            'periodo_teste': f"{int(df_teste.num_ano.min())}/{int(df_teste.num_mes.min())} - {int(df_teste.num_ano.max())}/{int(df_teste.num_mes.max())}",
-            'pct_anomalias_treino': round(df_treino['anomalo'].mean() * 100, 1),
-            'pct_anomalias_teste': round(df_teste['anomalo'].mean() * 100, 1),
-            'top_vinculos_anomalos': top,
-            'n_rubricas': len([c for c in cols_rub if not c.endswith('_yoy')]),
-        })
-    
-    return jsonify({'ok': False, 'erro': 'Estrutura invalida'})
 
-
-@require_auth
-@app.route('/api/ml/comparar', methods=['GET'])
-def ml_comparar():
-    """Compara todos os métodos para um cargo."""
-    import pandas as pd
-    from pathlib import Path
-    
-    cargo = request.args.get('cargo', 'P115')
-    
     results = []
-    for method in ['yoy', 'ajustado', 'temporal']:
-        base = Path(__file__).parent.parent.parent / 'data' / f'baseline_results_{method}'
-        csv_file = base / f'anomalias_{method}_{cargo}.csv'
-        
+    for method in ["yoy", "ajustado", "temporal"]:
+        base = Path(__file__).parent.parent.parent / "data" / f"baseline_results_{method}"
+        csv_file = base / f"anomalias_{method}_{cargo}.csv"
         if not csv_file.exists():
             continue
-        
         try:
-            df = pd.read_csv(csv_file, delimiter=';', encoding='utf-8')
+            df = pd.read_csv(csv_file, delimiter=";", encoding="utf-8")
             n_total = len(df)
             n_treino = int(n_total * 0.8)
             df_teste = df.iloc[n_treino:]
-            
-            pct_teste = round(df_teste['anomalo'].mean() * 100, 1) if 'anomalo' in df_teste.columns else 0
-            score_medio = round(df_teste['IF_score'].mean(), 4) if 'IF_score' in df_teste.columns else 0
-            
+            pct_teste = round(df_teste["anomalo"].mean() * 100, 1) if "anomalo" in df_teste.columns else 0
+            score_medio = round(df_teste["IF_score"].mean(), 4) if "IF_score" in df_teste.columns else 0
             results.append({
-                'method': method,
-                'label': {'yoy': 'YoY', 'ajustado': 'CAGR', 'temporal': 'Sem Ajuste'}.get(method, method),
-                'pct_anomalias_teste': pct_teste,
-                'score_medio': score_medio,
+                "method": method,
+                "label": {"yoy": "YoY", "ajustado": "CAGR", "temporal": "Sem Ajuste"}.get(method, method),
+                "pct_anomalias_teste": pct_teste,
+                "score_medio": score_medio,
             })
-        except:
+        except Exception:
             pass
-    
-    return jsonify({'cargo': cargo, 'methods': results})
+    return {"cargo": cargo, "methods": results}
 
 
-# ─── ML TEMPO REAL ──────────────────────────────────────────────────────────
-
-@require_auth
-@app.route('/api/ml/rodar', methods=['POST'])
-def ml_rodar():
-    """
-    Inicia análise ML em background para um cargo.
-    POST body: {"method": "yoy", "cargo": "P115"}
-    Retorna: {"job_id": "abc123", "status": "running"}
-    """
-    body = request.json or {}
-    method = body.get('method', 'yoy')
-    cargo = body.get('cargo')
-    
+@app.post("/api/ml/rodar")
+async def ml_rodar(request: Request):
+    require_auth(request)
+    body = await request.json()
+    method = body.get("method", "yoy")
+    cargo = body.get("cargo")
     if not cargo:
-        return jsonify({'ok': False, 'erro': 'Cargo e obrigatorio'}), 400
-    
+        return JSONResponse({"ok": False, "erro": "Cargo obrigatorio"}, status_code=400)
+
     import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'scripts'))
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
     from ml_inline import start_job
-    
     job_id = start_job(method, cargo)
-    return jsonify({'ok': True, 'job_id': job_id, 'method': method, 'cargo': cargo})
+    return {"ok": True, "job_id": job_id, "method": method, "cargo": cargo}
 
 
-@require_auth
-@app.route('/api/ml/status/<job_id>', methods=['GET'])
-def ml_status(job_id):
-    """Verifica status de um job de ML."""
+@app.get("/api/ml/status/{job_id}")
+async def ml_status(job_id: str, request: Request):
+    require_auth(request)
     import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'scripts'))
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
     from ml_inline import get_job
-    
     job = get_job(job_id)
-    if job.get('status') == 'unknown':
-        return jsonify({'ok': False, 'erro': 'Job nao encontrado'}), 404
-    return jsonify({'ok': True, **job})
+    if job.get("status") == "unknown":
+        return JSONResponse({"ok": False, "erro": "Job nao encontrado"}, status_code=404)
+    return {"ok": True, **job}
 
 
-@require_auth
-@app.route('/api/ml/resultado/<job_id>', methods=['GET'])
-def ml_resultado(job_id):
-    """Retorna resultado de um job completo."""
+@app.get("/api/ml/resultado/{job_id}")
+async def ml_resultado(job_id: str, request: Request):
+    require_auth(request)
     import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'scripts'))
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
     from ml_inline import get_job
-    
     job = get_job(job_id)
-    if job.get('status') == 'unknown':
-        return jsonify({'ok': False, 'erro': 'Job nao encontrado'}), 404
-    
-    if job.get('status') == 'running':
-        return jsonify({'ok': True, 'status': 'running', 'job_id': job_id})
-    
-    if job.get('status') == 'error':
-        return jsonify({'ok': False, 'status': 'error', 'erro': job.get('error')}), 500
-    
-    return jsonify({'ok': True, 'status': 'done', 'result': job.get('result')})
+    if job.get("status") == "unknown":
+        return JSONResponse({"ok": False, "erro": "Job nao encontrado"}, status_code=404)
+    if job.get("status") == "running":
+        return {"ok": True, "status": "running", "job_id": job_id}
+    if job.get("status") == "error":
+        return JSONResponse({"ok": False, "status": "error", "erro": job.get("error")}, status_code=500)
+    return {"ok": True, "status": "done", "result": job.get("result")}
 
 
-@require_auth
-@app.route('/api/ml/carregar_cache', methods=['GET'])
-def ml_carregar_cache():
-    """Carrega resultado do cache ou roda se não existir."""
-    method = request.args.get('method', 'yoy')
-    cargo = request.args.get('cargo', 'P115')
-    
-    cache_file = Path(__file__).parent.parent.parent / 'data' / 'ml_cache' / f'{method}_{cargo}.json'
-    
-    if cache_file.exists():
-        with open(cache_file) as f:
-            return jsonify({'ok': True, 'source': 'cache', 'data': json.load(f)})
-    
-    # Não existe — iniciar job
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'scripts'))
-    from ml_inline import start_job
-    
-    job_id = start_job(method, cargo)
-    return jsonify({'ok': True, 'source': 'compute', 'job_id': job_id, 'status': 'running'})
-
-if __name__ == '__main__':
+# ─── Run ───────────────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    import uvicorn
     print("=" * 50)
-    print("  Admin de Regras - ConfereAI")
+    print("  Admin de Regras - ConfereAI (FastAPI)")
     print("  http://localhost:5001")
     print("=" * 50)
-    app.run(host='0.0.0.0', port=5001, debug=False, use_reloader=False)
-
-
-@require_auth
-@app.route('/api/ml/cargos', methods=['GET'])
-def ml_cargos():
-    """Lista todos os cargos disponíveis no dataset atual."""
-    import pandas as pd
-
-    df = pd.read_csv('/root/confereai/data/historico_5_seplag.csv', delimiter=';', dtype=str)
-    for col in df.columns:
-        df[col] = df[col].str.strip().str.strip('"')
-
-    counts = df.groupby('cod_cargo').size().reset_index(name='n_registros')
-    counts = counts.sort_values('cod_cargo')
-
-    cargos = [
-        {'cargo': row['cod_cargo'], 'n_registros': int(row['n_registros']), 'method': 'yoy'}
-        for _, row in counts.iterrows()
-    ]
-
-    return jsonify({'cargos': cargos})
+    uvicorn.run(app, host="0.0.0.0", port=5001, log_level="warning")

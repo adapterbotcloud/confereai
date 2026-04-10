@@ -378,6 +378,30 @@
 </div>
 
 <script>
+// ─── Token Auth (FastAPI) ───────────────────────────────────────────────────────
+const TOKEN_KEY = 'confereai_token';
+const USER_KEY = 'confereai_user';
+
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); }
+function getUser() { return localStorage.getItem(USER_KEY) || ''; }
+
+// Global fetch override: add Authorization header to all /api/ requests
+const _origFetch = window.fetch.bind(window);
+window.fetch = function(url, options = {}) {
+  options = Object.assign({}, options || {});
+  if (url.startsWith('/api/')) {
+    const tok = getToken();
+    if (tok) {
+      options.headers = Object.assign({}, options.headers || {}, {
+        'Authorization': 'Bearer ' + tok
+      });
+    }
+  }
+  return _origFetch(url, options);
+};
+
 var AUTH = { user: null, token: null };
 
 async function doLogin() {
@@ -393,8 +417,12 @@ async function doLogin() {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({user, pass})
     });
-    if (r.ok) {
-      AUTH.user = user;
+    const d = await r.json();
+    if (d.ok && d.token) {
+      setToken(d.token);
+      localStorage.setItem(USER_KEY, d.user);
+      AUTH.user = d.user;
+      AUTH.token = d.token;
       document.getElementById('login-overlay').style.display = 'none';
       initApp();
     } else {
@@ -404,23 +432,34 @@ async function doLogin() {
   } catch(e) { erro.textContent = 'Erro de conexao'; erro.style.display = 'block'; btn.disabled = false; btn.textContent = 'Entrar'; }
 }
 
-// Check existing session
-(async function() {
-  try {
-    const r = await fetch('/api/me', {credentials:'include'});
-    if (r.ok) {
-      const d = await r.json();
+// Check existing token on page load
+(function() {
+  const tok = getToken();
+  if (tok) {
+    fetch('/api/me').then(function(r) {
+      if (r.ok) return r.json();
+      throw new Error('not auth');
+    }).then(function(d) {
       if (d.authenticated) {
-        AUTH.user = d.user;
+        AUTH.user = d.user || getUser();
+        AUTH.token = tok;
         initApp();
         return;
       }
-    }
-  } catch(e) {}
-  document.getElementById('login-overlay').style.display = 'flex';
+      clearToken();
+    }).catch(function() {
+      clearToken();
+    });
+  }
+  // Show login if no valid token
+  setTimeout(function() {
+    if (!AUTH.token) document.getElementById('login-overlay').style.display = 'flex';
+  }, 300);
 })();
 
 function initApp() {
+  AUTH.token = getToken();
+  AUTH.user = getUser();
   carregarRegras();
   window.mlLoaded = false;
 }
@@ -1036,7 +1075,7 @@ async function rodarML() {
       document.getElementById('comp-table').innerHTML = d.methods.map(m => `
         <tr>
           <td>${m.label}</td>
-          <td><strong style="color:${m.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)'">${m.pct_anomalias_teste}%</strong></td>
+          <td><strong style="color:${m.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)'}">${m.pct_anomalias_teste}%</strong></td>
           <td>${m.score_medio}</td>
           <td><button class="btn btn-outline btn-sm" onclick="document.getElementById('ml-metodo-select').value='${m.method}'">Ver</button></td>
         </tr>
