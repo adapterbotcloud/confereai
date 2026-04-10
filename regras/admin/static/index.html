@@ -1142,10 +1142,11 @@ async function rodarMLBeto(cargo, method) {
   var data = await res.json();
   console.log('[rodarMLBeto] resposta:', JSON.stringify(data).slice(0,200));
 
-  if (data.status === 'done') {
-    mostrarResultadoML(data.data);
-  } else if (data.status === 'running') {
+  if (data.ok === true && data.job_id) {
+    // Job started — agora poll o status
     await pollJob(data.job_id, cargo, method, btn);
+  } else if (data.status === 'done' && data.data) {
+    mostrarResultadoML(data.data);
   }
 
   if (btn) { btn.disabled = false; btn.innerHTML = '▶ Ver Detalhado'; }
