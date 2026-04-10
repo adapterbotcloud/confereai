@@ -1141,7 +1141,16 @@ async function rodarML() {
   });
   const data = await res.json();
   
-  if (!data.ok) { toast('Erro: ' + data.erro, 'erro'); btn.disabled = false; btn.innerHTML = '▶ Rodar ML'; return; }
+  if (!data.ok) {
+    toast('Erro: ' + data.erro, 'erro');
+    var errCard = document.getElementById('card-ml-detalhe');
+    if (errCard) {
+      errCard.innerHTML = '<div class="card-header"><div class="card-title" style="color:var(--red)">Erro ao iniciar analise</div></div><div style="padding:16px;color:var(--red)">' + (data.erro || 'Erro desconhecido') + '</div>';
+    }
+    btn.disabled = false;
+    btn.innerHTML = '▶ Rodar ML';
+    return;
+  }
   
   // Mostra loading no card (substitui conteudo)
   var cardDetalhe = document.getElementById('card-ml-detalhe');
@@ -1174,6 +1183,10 @@ async function pollJob(jobId, cargo, method, btn) {
       break;
     } else if (data.status === 'error') {
       toast('Erro: ' + data.error, 'erro');
+      var errCard = document.getElementById('card-ml-detalhe');
+      if (errCard) {
+        errCard.innerHTML = '<div class="card-header"><div class="card-title" style="color:var(--red)">Erro na analise ML</div></div><div style="padding:16px;color:var(--red)">' + (data.error || 'Erro desconhecido') + '</div>';
+      }
       btn.disabled = false;
       btn.innerHTML = '▶ Rodar ML';
       break;
@@ -1211,6 +1224,10 @@ function mostrarResultadoML(r) {
     console.log('[mostrarResultadoML] OK - card populado');
   } catch(e) {
     console.error('[mostrarResultadoML] ERRO:', e.message);
+    var errCard = document.getElementById('card-ml-detalhe');
+    if (errCard) {
+      errCard.innerHTML = '<div class="card-header"><div class="card-title" style="color:var(--red)">Erro ao exibir resultado</div></div><div style="padding:16px;color:var(--red)">' + e.message + '</div>';
+    }
   }
 }
 
