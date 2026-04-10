@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin de Regras — ConfereAI</title>
+<title>Admin de Regras - ConfereAI</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  
+
   :root {
     --bg: #0f1117;
     --card: #1a1d27;
@@ -21,14 +21,14 @@
     --orange: #ffa726;
     --purple: #ab47bc;
   }
-  
+
   body {
     background: var(--bg);
     color: var(--text);
     font-family: 'Segoe UI', system-ui, sans-serif;
     min-height: 100vh;
   }
-  
+
   header {
     background: var(--card);
     border-bottom: 1px solid var(--border);
@@ -37,19 +37,19 @@
     align-items: center;
     justify-content: space-between;
   }
-  
+
   .logo {
     font-size: 20px;
     font-weight: 700;
     color: var(--accent);
   }
-  
+
   .logo span { color: var(--text-dim); font-weight: 400; font-size: 14px; }
-  
+
   .header-actions { display: flex; gap: 12px; align-items: center; }
-  
+
   .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
-  
+
   /* ── Cards ── */
   .card {
     background: var(--card);
@@ -58,20 +58,20 @@
     padding: 24px;
     margin-bottom: 20px;
   }
-  
+
   .card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 16px;
   }
-  
+
   .card-title {
     font-size: 16px;
     font-weight: 600;
     color: var(--text);
   }
-  
+
   /* ── Buttons ── */
   .btn {
     padding: 8px 16px;
@@ -83,31 +83,31 @@
     transition: all 0.2s;
     font-family: inherit;
   }
-  
+
   .btn-primary {
     background: var(--accent);
     color: #0f1117;
   }
   .btn-primary:hover { background: #81d4fa; }
-  
+
   .btn-danger { background: var(--red); color: #fff; }
   .btn-danger:hover { background: #f44336; }
-  
+
   .btn-success { background: var(--green); color: #0f1117; }
   .btn-success:hover { background: #81c784; }
-  
+
   .btn-warning { background: var(--yellow); color: #0f1117; }
   .btn-warning:hover { background: #ffd54f; }
-  
+
   .btn-outline {
     background: transparent;
     border: 1px solid var(--border);
     color: var(--text-dim);
   }
   .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-  
+
   .btn-sm { padding: 5px 12px; font-size: 13px; }
-  
+
   /* ── Stats ── */
   .stats {
     display: grid;
@@ -115,7 +115,7 @@
     gap: 16px;
     margin-bottom: 24px;
   }
-  
+
   .stat {
     background: var(--card);
     border: 1px solid var(--border);
@@ -123,25 +123,25 @@
     padding: 20px;
     text-align: center;
   }
-  
+
   .stat-value {
     font-size: 32px;
     font-weight: 700;
     color: var(--accent);
   }
-  
+
   .stat-label {
     font-size: 13px;
     color: var(--text-dim);
     margin-top: 4px;
   }
-  
+
   /* ── Table ── */
   table {
     width: 100%;
     border-collapse: collapse;
   }
-  
+
   th {
     text-align: left;
     padding: 10px 14px;
@@ -151,18 +151,18 @@
     color: var(--text-dim);
     border-bottom: 1px solid var(--border);
   }
-  
+
   td {
     padding: 12px 14px;
     font-size: 14px;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
   }
-  
+
   tr:last-child td { border-bottom: none; }
-  
+
   tr:hover td { background: var(--card2); }
-  
+
   .badge {
     display: inline-block;
     padding: 3px 10px;
@@ -170,16 +170,16 @@
     font-size: 12px;
     font-weight: 600;
   }
-  
+
   .badge-ativa { background: rgba(102,187,106,0.2); color: var(--green); }
   .badge-inativa { background: rgba(255,255,255,0.08); color: var(--text-dim); }
-  
+
   .badge-alta { background: rgba(239,83,80,0.2); color: var(--red); }
   .badge-media { background: rgba(255,167,38,0.2); color: var(--orange); }
   .badge-baixa { background: rgba(255,202,40,0.2); color: var(--yellow); }
-  
+
   .actions { display: flex; gap: 8px; }
-  
+
   /* ── Modal ── */
   .modal-overlay {
     display: none;
@@ -190,9 +190,9 @@
     align-items: center;
     justify-content: center;
   }
-  
+
   .modal-overlay.active { display: flex; }
-  
+
   .modal {
     background: var(--card);
     border: 1px solid var(--border);
@@ -203,24 +203,24 @@
     max-height: 90vh;
     overflow-y: auto;
   }
-  
+
   .modal h2 {
     font-size: 20px;
     margin-bottom: 24px;
     color: var(--accent);
   }
-  
+
   .form-group {
     margin-bottom: 16px;
   }
-  
+
   .form-group label {
     display: block;
     font-size: 13px;
     color: var(--text-dim);
     margin-bottom: 6px;
   }
-  
+
   .form-group input,
   .form-group textarea,
   .form-group select {
@@ -233,20 +233,20 @@
     font-size: 14px;
     font-family: inherit;
   }
-  
+
   .form-group input:focus,
   .form-group textarea:focus,
   .form-group select:focus {
     outline: none;
     border-color: var(--accent);
   }
-  
+
   .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
   }
-  
+
   .modal-actions {
     display: flex;
     gap: 12px;
@@ -255,30 +255,60 @@
     padding-top: 16px;
     border-top: 1px solid var(--border);
   }
-  
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    background: var(--card2);
+    border-radius: 10px;
+    padding: 4px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+  .tab-btn.active { background: var(--card); color: var(--accent); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
   /* ── Test Results ── */
   .resultado {
     display: none;
     margin-top: 20px;
   }
-  
+
   .resultado.active { display: block; }
-  
+
   .resultado-header {
     display: flex;
     align-items: center;
     gap: 16px;
     margin-bottom: 16px;
   }
-  
+
   .resultado-num {
     font-size: 48px;
     font-weight: 700;
     color: var(--red);
   }
-  
+
   .tabela-resultado { margin-top: 16px; }
-  
+
   /* ── Toast ── */
   .toast {
     position: fixed;
@@ -293,11 +323,11 @@
     opacity: 0;
     transition: opacity 0.3s;
   }
-  
+
   .toast.show { opacity: 1; }
   .toast.ok { border-left: 4px solid var(--green); }
   .toast.erro { border-left: 4px solid var(--red); }
-  
+
   .situacao-info {
     background: rgba(79,195,247,0.1);
     border: 1px solid rgba(79,195,247,0.3);
@@ -307,7 +337,7 @@
     color: var(--text-dim);
     margin-bottom: 20px;
   }
-  
+
   .situacao-info code {
     background: var(--card2);
     padding: 2px 6px;
@@ -315,7 +345,7 @@
     color: var(--accent);
     font-size: 12px;
   }
-  
+
   .loading {
     display: inline-block;
     width: 16px;
@@ -325,7 +355,7 @@
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
-  
+
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
@@ -334,30 +364,40 @@
 <header>
   <div class="logo">🐐 ConfereAI <span>/ Admin de Regras</span></div>
   <div class="header-actions">
-    <button class="btn btn-outline btn-sm" onclick="validarRegras()">✓ Validar</button>
-    <button class="btn btn-success btn-sm" onclick="testarRegras()">▶ Testar Regras</button>
-    <button class="btn btn-primary" onclick="abrirModalNova()">+ Nova Regra</button>
+    <button class="btn btn-outline btn-sm" onclick="validarRegras()" id="btn-validar">✓ Validar</button>
+    <button class="btn btn-success btn-sm" onclick="testarRegras()" id="btn-testar">▶ Testar Regras</button>
+    <button class="btn btn-primary btn-sm" onclick="abrirModalNova()" id="btn-novaregra">+ Nova Regra</button>
+    <button class="btn btn-outline btn-sm ml-btn" onclick="rodarML()" id="btn-rodar-ml">▶ Rodar ML</button>
   </div>
 </header>
 
 <div class="container">
 
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('regras')">📋 Regras</button>
+    <button class="tab-btn" onclick="showTab('ml')">🤖 ML (Isolation Forest)</button>
+  </div>
+
+  <!-- ── TAB: REGRAS ── -->
+  <div id="tab-regras" class="tab-content active">
+
   <!-- Resumo -->
   <div class="stats" id="stats">
     <div class="stat">
-      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-value" id="stat-total">-</div>
       <div class="stat-label">Regras Cadastradas</div>
     </div>
     <div class="stat">
-      <div class="stat-value" id="stat-ativas">—</div>
+      <div class="stat-value" id="stat-ativas">-</div>
       <div class="stat-label">Regras Ativas</div>
     </div>
     <div class="stat">
-      <div class="stat-value" id="stat-violacoes">—</div>
+      <div class="stat-value" id="stat-violacoes">-</div>
       <div class="stat-label">Vínculos Violados</div>
     </div>
     <div class="stat">
-      <div class="stat-value" id="stat-valor">—</div>
+      <div class="stat-value" id="stat-valor">-</div>
       <div class="stat-label">Valor Irregular (R$)</div>
     </div>
   </div>
@@ -426,24 +466,128 @@
       </div>
     </div>
   </div>
+  <!-- end tab regras -->
+
+  <!-- ── TAB: ML ── -->
+  <div id="tab-ml" class="tab-content">
+
+    <div class="stats" id="stats-ml">
+      <div class="stat">
+        <div class="stat-value" id="ml-cargos">—</div>
+        <div class="stat-label">Cargos Analisados</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="ml-metodos">3</div>
+        <div class="stat-label">Métodos ML</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="ml-anomalias-treino">—</div>
+        <div class="stat-label">% Anomalias Treino</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="ml-anomalias-teste">—</div>
+        <div class="stat-label">% Anomalias Teste</div>
+      </div>
+    </div>
+
+    <!-- Seletor de Cargo -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Selecionar Cargo</div>
+      </div>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <select id="ml-cargo-select" onchange="carregarML()" style="flex:1; min-width:200px; padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px;">
+          <option value="">Carregando...</option>
+        </select>
+        <select id="ml-metodo-select" onchange="carregarML()" style="padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px;">
+          <option value="yoy">YoY (Year-over-Year)</option>
+          <option value="ajustado">CAGR Ajustado</option>
+          <option value="temporal">Sem Ajuste</option>
+        </select>
+        <button class="btn btn-primary" onclick="carregarML()">🔍 Analisar</button>
+      </div>
+    </div>
+
+    <!-- Comparação de métodos -->
+    <div class="card" id="card-comparacao" style="display:none">
+      <div class="card-header">
+        <div class="card-title">Comparação de Métodos — <span id="comp-cargo"></span></div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Método</th><th>% Anomalias Teste</th><th>Score Médio</th><th></th></tr>
+        </thead>
+        <tbody id="comp-table"></tbody>
+      </table>
+    </div>
+
+    <!-- Resultado detalhado ML -->
+    <div class="card" id="card-ml-detalhe" style="display:none">
+      <div class="card-header">
+        <div class="card-title">Análise ML — <span id="ml-cargo-titulo"></span></div>
+        <div style="font-size:13px; color:var(--text-dim)">
+          Treino: <span id="ml-periodo-treino"></span> | Teste: <span id="ml-periodo-teste"></span>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px">
+        <div style="background:var(--card2); border-radius:8px; padding:16px; text-align:center">
+          <div style="font-size:24px; font-weight:700; color:var(--accent)" id="ml-pct-treino">—</div>
+          <div style="font-size:13px; color:var(--text-dim)">% Anomalias Treino</div>
+        </div>
+        <div style="background:var(--card2); border-radius:8px; padding:16px; text-align:center">
+          <div style="font-size:24px; font-weight:700; color:var(--red)" id="ml-pct-teste">—</div>
+          <div style="font-size:13px; color:var(--text-dim)">% Anomalias Teste</div>
+        </div>
+      </div>
+
+      <div style="font-size:13px; color:var(--text-dim); margin-bottom:12px">
+        📊 <span id="ml-n-rubricas"></span> rubricas | Treino: <span id="ml-n-treino"></span> amostras | Teste: <span id="ml-n-teste"></span> amostras
+      </div>
+
+      <div class="card-title" style="margin-bottom:8px">Vínculos Mais Anômalos (Top 20 no Teste)</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Vínculo</th><th>Qtd Meses Anômalo</th><th>Score Médio</th></tr>
+          </thead>
+          <tbody id="ml-top-anomalos"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Entenda o resultado -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px">📖 Como interpretar</div>
+      <div style="font-size:13px; color:var(--text-dim); line-height:1.7">
+        <p><strong>Isolation Forest</strong> isola anomalias em espaço n-dimensional. Quanto mais negativo o <strong>score</strong>, mais anômalo o registro.</p>
+        <p style="margin-top:8px"><strong>% Anomalias Teste > Treino:</strong> indica que dados recentes têm padrões diferentes do histórico — pode ser fraude, erro de sistema ou mudança de política salarial.</p>
+        <p style="margin-top:8px"><strong>YoY</strong>: compara cada mês com o mesmo mês do ano anterior — remove sazonalidade.</p>
+        <p style="margin-top:8px"><strong>CAGR</strong>: remove evolução de longo prazo — compara com taxa de crescimento média.</p>
+      </div>
+    </div>
+
+  </div>
+  <!-- end tab ml -->
 
 </div>
+
 
 <!-- Modal Nova/Editar Regra -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <h2 id="modal-titulo">Nova Regra</h2>
-    
+
     <div class="form-group">
       <label>Nome da Regra *</label>
       <input type="text" id="f-nome" placeholder="ex: Pensionista nao pode receber VENCIMENTO">
     </div>
-    
+
     <div class="form-group">
       <label>Descrição</label>
       <textarea id="f-descricao" rows="2" placeholder="explica a regra..."></textarea>
     </div>
-    
+
     <div class="form-row">
       <div class="form-group">
         <label>Situação Funcional *</label>
@@ -460,7 +604,7 @@
         </select>
         <small style="color:var(--text-dim)">Segure Ctrl/Cmd para selecionar múltiplos</small>
       </div>
-      
+
       <div class="form-group">
         <label>Severidade</label>
         <select id="f-severidade">
@@ -468,7 +612,7 @@
           <option value="MEDIA">MÉDIA</option>
           <option value="BAIXA">BAIXA</option>
         </select>
-        
+
         <label style="margin-top:12px">Status</label>
         <select id="f-status">
           <option value="ativa">Ativa</option>
@@ -476,17 +620,17 @@
         </select>
       </div>
     </div>
-    
+
     <div class="form-group">
-      <label>Rubrica CONTÉM (pelo menos um) — deixe vazio para qualquer</label>
+      <label>Rubrica CONTÉM (pelo menos um) - deixe vazio para qualquer</label>
       <input type="text" id="f-contem" placeholder="ex: VENCIMENTO, PROVENTO (separados por vírgula)">
     </div>
-    
+
     <div class="form-group">
-      <label>Rubrica NÃO CONTÉM (NONE desses) — deixe vazio se não aplicável</label>
+      <label>Rubrica NÃO CONTÉM (NONE desses) - deixe vazio se não aplicável</label>
       <input type="text" id="f-nao-contem" placeholder="ex: PENSAO">
     </div>
-    
+
     <div class="form-row">
       <div class="form-group">
         <label>Ação</label>
@@ -496,7 +640,7 @@
         </select>
       </div>
     </div>
-    
+
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarRegra()">Salvar</button>
@@ -523,12 +667,12 @@ async function carregarRegras() {
 // ─── Renderizar ───────────────────────────────────────────────────────────────
 function renderizarTabela() {
   const tbody = document.getElementById('tabela-regras');
-  
+
   if (!regras.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--text-dim)">Nenhuma regra cadastrada</td></tr>';
     return;
   }
-  
+
   tbody.innerHTML = regras.map(r => `
     <tr>
       <td><code style="background:var(--card2); padding:3px 8px; border-radius:4px; font-size:13px">${r.id}</code></td>
@@ -574,24 +718,24 @@ function editarRegra(id) {
   const r = regras.find(x => x.id === id);
   if (!r) return;
   editando = id;
-  
+
   document.getElementById('modal-titulo').textContent = `Editar Regra ${id}`;
   document.getElementById('f-nome').value = r.nome || '';
   document.getElementById('f-descricao').value = r.descricao || '';
-  
+
   // Multi-select situação
   const sel = document.getElementById('f-situacao');
   sel.selectedOptions.length = 0;
   (r.situacao_funcional || []).forEach(s => {
     [...sel.options].find(o => o.value === s).selected = true;
   });
-  
+
   document.getElementById('f-contem').value = (r.rubrica_contem || []).join(', ');
   document.getElementById('f-nao-contem').value = (r.rubrica_nao_contem || []).join(', ');
   document.getElementById('f-severidade').value = r.severidade || 'MEDIA';
   document.getElementById('f-acao').value = r.acao || 'ALERTA';
   document.getElementById('f-status').value = r.status || 'ativa';
-  
+
   document.getElementById('modal').classList.add('active');
 }
 
@@ -604,11 +748,11 @@ function fecharModal() {
 async function salvarRegra() {
   const nome = document.getElementById('f-nome').value.trim();
   if (!nome) { toast('Nome é obrigatório', 'erro'); return; }
-  
+
   const situacoesSel = [...document.getElementById('f-situacao').selectedOptions].map(o => o.value);
   const contem = document.getElementById('f-contem').value.split(',').map(s => s.trim()).filter(Boolean);
   const naoContem = document.getElementById('f-nao-contem').value.split(',').map(s => s.trim()).filter(Boolean);
-  
+
   const payload = {
     nome,
     descricao: document.getElementById('f-descricao').value.trim(),
@@ -619,14 +763,14 @@ async function salvarRegra() {
     acao: document.getElementById('f-acao').value,
     status: document.getElementById('f-status').value,
   };
-  
+
   let res;
   if (editando) {
     res = await fetch(`${API}/${editando}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
   } else {
     res = await fetch(API, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
   }
-  
+
   if (res.ok) {
     toast(editando ? 'Regra atualizada!' : 'Regra criada!', 'ok');
     fecharModal();
@@ -663,25 +807,25 @@ async function testarRegras() {
   const btn = event.target;
   btn.disabled = true;
   btn.innerHTML = '<div class="loading"></div>';
-  
+
   const res = await fetch(`${API}/testar`, { method: 'POST' });
   const data = await res.json();
-  
+
   btn.disabled = false;
   btn.innerHTML = '▶ Testar Regras';
-  
+
   if (!data.ok) { toast('Erro ao testar regras', 'erro'); return; }
-  
+
   // Atualizar stats
   document.getElementById('stat-violacoes').textContent = data.total_vinculos;
-  document.getElementById('stat-valor').textContent = data.total_vinculos > 0 
-    ? formatarMoeda(data.valor_total) 
-    : '—';
-  
+  document.getElementById('stat-valor').textContent = data.total_vinculos > 0
+    ? formatarMoeda(data.valor_total)
+    : '-';
+
   // Mostrar resultado
   document.getElementById('res-total').textContent = data.total_vinculos;
   document.getElementById('res-valor').textContent = formatarMoeda(data.valor_total);
-  
+
   // Por regra
   const porRegra = document.getElementById('res-por-regra');
   if (data.por_regra && data.por_regra.length) {
@@ -691,7 +835,7 @@ async function testarRegras() {
   } else {
     porRegra.innerHTML = '<span style="color:var(--green)">✅ Nenhuma violação encontrada</span>';
   }
-  
+
   // Detalhes
   const detalhes = document.getElementById('res-detalhes');
   detalhes.innerHTML = (data.detalhes || []).map(d => `
@@ -704,7 +848,7 @@ async function testarRegras() {
       <td><code>${d.regra_id}</code></td>
     </tr>
   `).join('');
-  
+
   document.getElementById('resultado').classList.add('active');
 }
 
@@ -731,8 +875,113 @@ function toast(msg, tipo = 'ok') {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  
+  if (name === 'ml') {
+    // Hide/show regras buttons
+    ['btn-validar','btn-testar','btn-novaregra'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    document.getElementById('btn-rodar-ml').style.display = 'inline-block';
+    if (!window.mlLoaded) { carregarCargosML(); window.mlLoaded = true; }
+  } else {
+    ['btn-validar','btn-testar','btn-novaregra'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'inline-block';
+    });
+    document.getElementById('btn-rodar-ml').style.display = 'none';
+  }
+}
+
+// ─── ML ─────────────────────────────────────────────────────────────────────
+function carregarCargosML() {
+  fetch('/api/ml/cargos')
+    .then(r => r.json())
+    .then(d => {
+      const sel = document.getElementById('ml-cargo-select');
+      sel.innerHTML = d.cargos.map(c => 
+        `<option value="${c.cargo}">${c.cargo} (${c.n_registros} reg)</option>`
+      ).join('');
+      document.getElementById('ml-cargos').textContent = d.cargos.length;
+      if (d.cargos.length > 0) carregarML();
+    });
+}
+
+function carregarML() {
+  const cargo = document.getElementById('ml-cargo-select').value;
+  const method = document.getElementById('ml-metodo-select').value;
+  if (!cargo) return;
+
+  // Comparar métodos
+  fetch(`/api/ml/comparar?cargo=${cargo}`)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.methods || !d.methods.length) return;
+      document.getElementById('comp-cargo').textContent = d.cargo;
+      document.getElementById('comp-table').innerHTML = d.methods.map(m => `
+        <tr>
+          <td>${m.label}</td>
+          <td><strong style="color:${m.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)'}">${m.pct_anomalias_teste}%</strong></td>
+          <td>${m.score_medio}</td>
+          <td><button class="btn btn-outline btn-sm" onclick="document.getElementById('ml-metodo-select').value='${m.method}';carregarML()">Ver</button></td>
+        </tr>
+      `).join('');
+      document.getElementById('card-comparacao').style.display = 'block';
+    });
+
+  // Detalhe do método selecionado
+  fetch(`/api/ml/resultados?cargo=${cargo}&method=${method}`)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok) { toast('Erro: ' + d.erro, 'erro'); return; }
+      
+      document.getElementById('card-ml-detalhe').style.display = 'block';
+      document.getElementById('ml-cargo-titulo').textContent = d.cargo + ' / ' + d.method;
+      document.getElementById('ml-periodo-treino').textContent = d.periodo_treino;
+      document.getElementById('ml-periodo-teste').textContent = d.periodo_teste;
+      document.getElementById('ml-pct-treino').textContent = d.pct_anomalias_treino + '%';
+      document.getElementById('ml-pct-teste').textContent = d.pct_anomalias_teste + '%';
+      document.getElementById('ml-pct-teste').style.color = d.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)';
+      document.getElementById('ml-n-rubricas').textContent = d.n_rubricas;
+      document.getElementById('ml-n-treino').textContent = d.n_treino;
+      document.getElementById('ml-n-teste').textContent = d.n_teste;
+
+      // Anomalias no treino/teste stats
+      document.getElementById('ml-anomalias-treino').textContent = d.pct_anomalias_treino + '%';
+      document.getElementById('ml-anomalias-teste').textContent = d.pct_anomalias_teste + '%';
+
+      // Top vínculos
+      const top = d.top_vinculos_anomalos || [];
+      if (top.length > 0) {
+        document.getElementById('ml-top-anomalos').innerHTML = top.map(v => `
+          <tr>
+            <td><code>${v.isn_vinculo}</code></td>
+            <td>${v.qtd_meses}</td>
+            <td style="color:var(--red)">${v.score_medio}</td>
+          </tr>
+        `).join('');
+      } else {
+        document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--green); padding:24px">✅ Nenhuma anomalia significativa detectada</td></tr>';
+      }
+    });
+}
+
+function rodarML() {
+  toast('ML usa dados pré-processados. Rode os scripts baseline_* para gerar novos resultados.', 'ok');
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
+window.mlLoaded = false;
 carregarRegras();
+
+// Hide ML button initially
+document.getElementById('btn-rodar-ml').style.display = 'none';
 </script>
 </body>
 </html>
