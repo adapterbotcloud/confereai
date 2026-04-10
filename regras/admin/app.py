@@ -366,6 +366,84 @@ def ml_comparar():
     
     return jsonify({'cargo': cargo, 'methods': results})
 
+
+# ─── ML TEMPO REAL ──────────────────────────────────────────────────────────
+
+@app.route('/api/ml/rodar', methods=['POST'])
+def ml_rodar():
+    """
+    Inicia análise ML em background para um cargo.
+    POST body: {"method": "yoy", "cargo": "P115"}
+    Retorna: {"job_id": "abc123", "status": "running"}
+    """
+    body = request.json or {}
+    method = body.get('method', 'yoy')
+    cargo = body.get('cargo')
+    
+    if not cargo:
+        return jsonify({'ok': False, 'erro': 'Cargo e obrigatorio'}), 400
+    
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'scripts'))
+    from ml_inline import start_job
+    
+    job_id = start_job(method, cargo)
+    return jsonify({'ok': True, 'job_id': job_id, 'method': method, 'cargo': cargo})
+
+
+@app.route('/api/ml/status/<job_id>', methods=['GET'])
+def ml_status(job_id):
+    """Verifica status de um job de ML."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'scripts'))
+    from ml_inline import get_job
+    
+    job = get_job(job_id)
+    if job.get('status') == 'unknown':
+        return jsonify({'ok': False, 'erro': 'Job nao encontrado'}), 404
+    return jsonify({'ok': True, **job})
+
+
+@app.route('/api/ml/resultado/<job_id>', methods=['GET'])
+def ml_resultado(job_id):
+    """Retorna resultado de um job completo."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'scripts'))
+    from ml_inline import get_job
+    
+    job = get_job(job_id)
+    if job.get('status') == 'unknown':
+        return jsonify({'ok': False, 'erro': 'Job nao encontrado'}), 404
+    
+    if job.get('status') == 'running':
+        return jsonify({'ok': True, 'status': 'running', 'job_id': job_id})
+    
+    if job.get('status') == 'error':
+        return jsonify({'ok': False, 'status': 'error', 'erro': job.get('error')}), 500
+    
+    return jsonify({'ok': True, 'status': 'done', 'result': job.get('result')})
+
+
+@app.route('/api/ml/carregar_cache', methods=['GET'])
+def ml_carregar_cache():
+    """Carrega resultado do cache ou roda se não existir."""
+    method = request.args.get('method', 'yoy')
+    cargo = request.args.get('cargo', 'P115')
+    
+    cache_file = Path(__file__).parent.parent.parent / 'data' / 'ml_cache' / f'{method}_{cargo}.json'
+    
+    if cache_file.exists():
+        with open(cache_file) as f:
+            return jsonify({'ok': True, 'source': 'cache', 'data': json.load(f)})
+    
+    # Não existe — iniciar job
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'scripts'))
+    from ml_inline import start_job
+    
+    job_id = start_job(method, cargo)
+    return jsonify({'ok': True, 'source': 'compute', 'job_id': job_id, 'status': 'running'})
+
 if __name__ == '__main__':
     print("=" * 50)
     print("  Admin de Regras - ConfereAI")

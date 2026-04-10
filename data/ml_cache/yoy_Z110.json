@@ -1,0 +1,16 @@
+{
+  "cargo": "Z110",
+  "method": "yoy",
+  "n_total": 5098,
+  "n_treino": 4078,
+  "n_teste": 1020,
+  "periodo_treino": "2020/1 - 2025/9",
+  "periodo_teste": "2020/1 - 2025/9",
+  "n_rubricas": 35,
+  "yoy_validos_pct": 100.0,
+  "pct_anomalias_treino": 0.0,
+  "pct_anomalias_teste": 0.0,
+  "score_medio_teste": 0.0,
+  "top_vinculos_anomalos": [],
+  "timestamp": "2026-04-10T16:43:39.133030"
+}

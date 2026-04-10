@@ -504,7 +504,7 @@
           <option value="ajustado">CAGR Ajustado</option>
           <option value="temporal">Sem Ajuste</option>
         </select>
-        <button class="btn btn-primary" onclick="carregarML()">🔍 Analisar</button>
+        <button class="btn btn-primary" onclick="rodarML()">▶ Rodar ML</button>
       </div>
     </div>
 
@@ -913,12 +913,12 @@ function carregarCargosML() {
     });
 }
 
-function carregarML() {
+async function carregarML() {
   const cargo = document.getElementById('ml-cargo-select').value;
   const method = document.getElementById('ml-metodo-select').value;
   if (!cargo) return;
 
-  // Comparar métodos
+  // Comparar métodos (cache CSV)
   fetch(`/api/ml/comparar?cargo=${cargo}`)
     .then(r => r.json())
     .then(d => {
@@ -929,51 +929,95 @@ function carregarML() {
           <td>${m.label}</td>
           <td><strong style="color:${m.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)'}">${m.pct_anomalias_teste}%</strong></td>
           <td>${m.score_medio}</td>
-          <td><button class="btn btn-outline btn-sm" onclick="document.getElementById('ml-metodo-select').value='${m.method}';carregarML()">Ver</button></td>
+          <td><button class="btn btn-outline btn-sm" onclick="document.getElementById('ml-metodo-select').value='${m.method}'">Ver</button></td>
         </tr>
       `).join('');
       document.getElementById('card-comparacao').style.display = 'block';
     });
 
-  // Detalhe do método selecionado
-  fetch(`/api/ml/resultados?cargo=${cargo}&method=${method}`)
-    .then(r => r.json())
-    .then(d => {
-      if (!d.ok) { toast('Erro: ' + d.erro, 'erro'); return; }
-      
-      document.getElementById('card-ml-detalhe').style.display = 'block';
-      document.getElementById('ml-cargo-titulo').textContent = d.cargo + ' / ' + d.method;
-      document.getElementById('ml-periodo-treino').textContent = d.periodo_treino;
-      document.getElementById('ml-periodo-teste').textContent = d.periodo_teste;
-      document.getElementById('ml-pct-treino').textContent = d.pct_anomalias_treino + '%';
-      document.getElementById('ml-pct-teste').textContent = d.pct_anomalias_teste + '%';
-      document.getElementById('ml-pct-teste').style.color = d.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)';
-      document.getElementById('ml-n-rubricas').textContent = d.n_rubricas;
-      document.getElementById('ml-n-treino').textContent = d.n_treino;
-      document.getElementById('ml-n-teste').textContent = d.n_teste;
-
-      // Anomalias no treino/teste stats
-      document.getElementById('ml-anomalias-treino').textContent = d.pct_anomalias_treino + '%';
-      document.getElementById('ml-anomalias-teste').textContent = d.pct_anomalias_teste + '%';
-
-      // Top vínculos
-      const top = d.top_vinculos_anomalos || [];
-      if (top.length > 0) {
-        document.getElementById('ml-top-anomalos').innerHTML = top.map(v => `
-          <tr>
-            <td><code>${v.isn_vinculo}</code></td>
-            <td>${v.qtd_meses}</td>
-            <td style="color:var(--red)">${v.score_medio}</td>
-          </tr>
-        `).join('');
-      } else {
-        document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--green); padding:24px">✅ Nenhuma anomalia significativa detectada</td></tr>';
-      }
-    });
+  // Tentar carregar do cache ML em tempo real
+  const res = await fetch(`/api/ml/carregar_cache?cargo=${cargo}&method=${method}`);
+  const data = await res.json();
+  
+  if (data.source === 'cache' && data.data) {
+    mostrarResultadoML(data.data);
+    toast('✅ Carregado do cache', 'ok');
+  } else if (data.status === 'running') {
+    toast('⏳ Computando ML em tempo real... (aguarde)', 'ok');
+    await pollJob(data.job_id, cargo, method, document.getElementById('btn-rodar-ml'));
+  }
 }
 
-function rodarML() {
-  toast('ML usa dados pré-processados. Rode os scripts baseline_* para gerar novos resultados.', 'ok');
+async function rodarML() {
+  const cargo = document.getElementById('ml-cargo-select')?.value || 'P115';
+  const method = document.getElementById('ml-metodo-select')?.value || 'yoy';
+  
+  const btn = document.getElementById('btn-rodar-ml');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="loading"></div> Rodando...';
+  toast('Iniciando análise ML...', 'ok');
+  
+  // Iniciar job
+  const res = await fetch('/api/ml/rodar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({method, cargo})
+  });
+  const data = await res.json();
+  
+  if (!data.ok) { toast('Erro: ' + data.erro, 'erro'); btn.disabled = false; btn.innerHTML = '▶ Rodar ML'; return; }
+  
+  // Polling
+  await pollJob(data.job_id, cargo, method, btn);
+}
+
+async function pollJob(jobId, cargo, method, btn) {
+  while (true) {
+    await new Promise(r => setTimeout(r, 2000));
+    const res = await fetch('/api/ml/status/' + jobId);
+    const data = await res.json();
+    
+    if (data.status === 'done') {
+      mostrarResultadoML(data.result);
+      btn.disabled = false;
+      btn.innerHTML = '▶ Rodar ML';
+      toast('✅ Análise concluída!', 'ok');
+      break;
+    } else if (data.status === 'error') {
+      toast('Erro: ' + data.error, 'erro');
+      btn.disabled = false;
+      btn.innerHTML = '▶ Rodar ML';
+      break;
+    }
+  }
+}
+
+function mostrarResultadoML(r) {
+  document.getElementById('card-ml-detalhe').style.display = 'block';
+  document.getElementById('ml-cargo-titulo').textContent = r.cargo + ' / ' + r.method;
+  document.getElementById('ml-periodo-treino').textContent = r.periodo_treino;
+  document.getElementById('ml-periodo-teste').textContent = r.periodo_teste;
+  document.getElementById('ml-pct-treino').textContent = r.pct_anomalias_treino + '%';
+  document.getElementById('ml-pct-teste').textContent = r.pct_anomalias_teste + '%';
+  document.getElementById('ml-pct-teste').style.color = r.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)';
+  document.getElementById('ml-n-rubricas').textContent = r.n_rubricas;
+  document.getElementById('ml-n-treino').textContent = r.n_treino;
+  document.getElementById('ml-n-teste').textContent = r.n_teste;
+  document.getElementById('ml-anomalias-treino').textContent = r.pct_anomalias_treino + '%';
+  document.getElementById('ml-anomalias-teste').textContent = r.pct_anomalias_teste + '%';
+  
+  const top = r.top_vinculos_anomalos || [];
+  if (top.length > 0) {
+    document.getElementById('ml-top-anomalos').innerHTML = top.map(v => `
+      <tr>
+        <td><code>${v.isn_vinculo}</code></td>
+        <td>${v.qtd_meses}</td>
+        <td style="color:var(--red)">${v.score_medio}</td>
+      </tr>
+    `).join('');
+  } else {
+    document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--green); padding:24px">✅ Nenhuma anomalia detectada</td></tr>';
+  }
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────

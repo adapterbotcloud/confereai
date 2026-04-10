@@ -1,0 +1,16 @@
+{
+  "cargo": "P105",
+  "method": "yoy",
+  "n_total": 4002,
+  "n_treino": 3201,
+  "n_teste": 801,
+  "periodo_treino": "2020/1 - 2025/9",
+  "periodo_teste": "2020/1 - 2025/9",
+  "n_rubricas": 22,
+  "yoy_validos_pct": 100.0,
+  "pct_anomalias_treino": 0.0,
+  "pct_anomalias_teste": 0.0,
+  "score_medio_teste": 0.0,
+  "top_vinculos_anomalos": [],
+  "timestamp": "2026-04-10T16:42:40.993240"
+}
