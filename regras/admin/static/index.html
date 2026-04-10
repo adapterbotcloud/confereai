@@ -1018,6 +1018,7 @@ function carregarCargosML() {
     .then(function(d) { console.log('[ML] cargos recebidos:', d.cargos ? d.cargos.length : 'ERRO', d);
       const sel = document.getElementById('ml-cargo-select');
       // Ordena por n_registros desc (maior primero)
+      window._cargos = d.cargos;
       const sorted = [...d.cargos].sort((a,b) => b.n_registros - a.n_registros);
       sel.innerHTML = sorted.map(c => 
         `<option value="${c.cargo}">${c.cargo} (${c.n_registros.toLocaleString('pt-BR')} reg)</option>`
@@ -1153,7 +1154,10 @@ function mostrarResultadoML(r) {
     topRows = '<tr><td colspan="3" style="text-align:center;padding:32px;color:#66bb6a;font-size:16px">✅ Nenhuma anomalia detectada</td></tr>';
   }
   var html = '<div style="background:#1a2a3a;border:2px solid #4fc3f7;border-radius:12px;padding:24px;margin-top:16px">' +
-    '<div style="font-size:20px;font-weight:700;color:#4fc3f7;margin-bottom:8px">Análise ML — ' + r.cargo + ' / ' + r.method + '</div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
+      '<div style="font-size:20px;font-weight:700;color:#4fc3f7">Análise ML — ' + r.cargo + ' / ' + r.method + '</div>' +
+      '<button onclick="voltarFormML()" style="background:#21253a;color:#e0e0e0;border:1px solid #2a2f45;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px">← Voltar</button>' +
+    '</div>' +
     '<div style="font-size:13px;color:#8892b0;margin-bottom:16px">Treino: ' + (r.periodo_treino || '-') + ' | Teste: ' + (r.periodo_teste || '-') + '</div>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">' +
       '<div style="background:#21253a;padding:16px;border-radius:8px;text-align:center">' +
@@ -1175,6 +1179,36 @@ function mostrarResultadoML(r) {
   tabMl.style.display = 'block';
   window.scrollTo({top: 0, behavior: 'smooth'});
   console.log('[mostrarResultadoML] FIM - HTML injetado');
+}
+
+function voltarFormML() {
+  // Salva valor selecionado
+  var selCargo = document.getElementById('ml-cargo-select');
+  var cargoValor = selCargo ? selCargo.value : 'P115';
+  var cargos = window._cargos || [];
+  showTab('ml');
+  // Reconstrói o form original
+  var formHtml = '<div class="stats" id="stats-ml">' +
+    '<div class="stat"><div class="stat-value" id="ml-cargos">' + cargos.length + '</div><div class="stat-label">Cargos Analisados</div></div>' +
+    '<div class="stat"><div class="stat-value" id="ml-metodos">3</div><div class="stat-label">Métodos ML</div></div>' +
+    '<div class="stat"><div class="stat-value" id="ml-anomalias-treino">—</div><div class="stat-label">% Anomalias Treino</div></div>' +
+    '<div class="stat"><div class="stat-value" id="ml-anomalias-teste">—</div><div class="stat-label">% Anomalias Teste</div></div></div>' +
+    '<div class="card"><div class="card-header"><div class="card-title">Selecionar Cargo</div></div>' +
+    '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">' +
+    '<select id="ml-cargo-select" onchange="carregarML()" style="flex:1;min-width:200px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;">' +
+    '</select>' +
+    '<select id="ml-metodo-select" onchange="carregarML()" style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;">' +
+    '<option value="yoy">YoY (Year-over-Year)</option><option value="ajustado">CAGR Ajustado</option><option value="temporal">Sem Ajuste</option></select>' +
+    '<button class="btn btn-primary" onclick="rodarML()">▶ Rodar ML</button></div></div>';
+  document.getElementById('tab-ml').innerHTML = formHtml;
+  // Repopula dropdown
+  var newSel = document.getElementById('ml-cargo-select');
+  if (newSel && cargos.length) {
+    newSel.innerHTML = cargos.map(function(c) {
+      return '<option value="' + c.cargo + '">' + c.cargo + ' (' + c.n_registros.toLocaleString('pt-BR') + ' reg)</option>';
+    }).join('');
+    newSel.value = cargoValor;
+  }
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
