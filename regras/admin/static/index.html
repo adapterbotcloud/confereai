@@ -624,12 +624,7 @@ async function initApp() {
         <select id="ml-cargo-select" onchange="carregarML(false)" style="flex:1; min-width:200px; padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px;">
           <option value="">Carregando...</option>
         </select>
-        <select id="ml-metodo-select" onchange="carregarML(false)" style="padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px;">
-          <option value="yoy">YoY (Year-over-Year)</option>
-          <option value="ajustado">CAGR Ajustado</option>
-          <option value="temporal">Sem Ajuste</option>
-        </select>
-        <button id="btn-rodar-ml" class="btn btn-primary" onclick="rodarML()">▶ Rodar ML</button>
+        <button id="btn-rodar-ml" class="btn btn-primary" onclick="rodarML()">▶ Ver Detalhado</button>
       </div>
     </div>
 
@@ -1073,7 +1068,7 @@ async function carregarML(skipCheck) {
   if (cargoSel && cargoSel.value) window._lastCargo = cargoSel.value;
   if (!cargoSel) { alert('Dropdown de cargo não encontrado.'); return; }
   var cargo = cargoSel.value;
-  var method = (document.getElementById('ml-metodo-select') || {}).value || 'yoy';
+  var method = 'yoy';
   if (!cargo) return;
 
   // Mostra estado de carregamento usando o card original (se existir no DOM)
@@ -1091,7 +1086,7 @@ async function carregarML(skipCheck) {
       if (compCargo) compCargo.textContent = d.cargo;
       if (compTable) {
         compTable.innerHTML = d.methods.map(function(m) {
-          return '<tr><td>' + m.label + '</td><td><strong style="color:' + (m.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)') + '">' + m.pct_anomalias_teste + '%</strong></td><td>' + m.score_medio + '</td><td><button class="btn btn-outline btn-sm" onclick="document.getElementById(\'ml-metodo-select\').value=\'' + m.method + '\'; carregarML();">Ver</button></td></tr>';
+          return '<tr><td>' + m.label + '</td><td><strong style="color:' + (m.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)') + '">' + m.pct_anomalias_teste + '%</strong></td><td>' + m.score_medio + '</td><td><button class="btn btn-outline btn-sm" onclick="rodarMLComMetodo(\'' + m.method + '\');">Ver</button></td></tr>';
         }).join('');
       }
     }).catch(function(e) { console.error('[comparar] erro:', e); });
@@ -1107,64 +1102,62 @@ async function carregarML(skipCheck) {
   // else: sem cache, usa estado carregamento padrao do card original
 }
 
-async function rodarML() {
-  console.log('[rodarML] chamado');
-  showTab('ml');
-  var cargo = document.getElementById('ml-cargo-select')?.value || 'P115';
+async function rodarMLComMetodo(method) {
+  console.log('[rodarMLComMetodo] method:', method);
+  var sel = document.getElementById('ml-cargo-select');
+  var cargo = sel ? sel.value : window._lastCargo || 'P115';
   window._lastCargo = cargo;
-  const method = document.getElementById('ml-metodo-select')?.value || 'yoy';
-
-  // Carrega comparacao em paralelo
-  fetch(`/api/ml/comparar?cargo=${cargo}`)
-    .then(r => r.json())
-    .then(d => {
-      if (!d.methods || !d.methods.length) return;
-      document.getElementById('comp-cargo').textContent = d.cargo;
-      document.getElementById('comp-table').innerHTML = d.methods.map(m => `
-        <tr>
-          <td>${m.label}</td>
-          <td><strong style="color:${m.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)'}">${m.pct_anomalias_teste}%</strong></td>
-          <td>${m.score_medio}</td>
-          <td><button class="btn btn-outline btn-sm" onclick="document.getElementById('ml-metodo-select').value='${m.method}'">Ver</button></td>
-        </tr>
-      `).join('');
-      document.getElementById('card-comparacao').style.display = 'block';
-    });
-
-  const btn = document.getElementById('btn-rodar-ml');
-  btn.disabled = true;
-  btn.innerHTML = '<div class="loading"></div> Rodando...';
-  toast('Iniciando análise ML...', 'ok');
-  
-  // Iniciar job
-  const res = await fetch('/api/ml/rodar', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({method, cargo})
-  });
-  const data = await res.json();
-  
-  if (!data.ok) {
-    toast('Erro: ' + data.erro, 'erro');
-    var errCard = document.getElementById('card-ml-detalhe');
-    if (errCard) {
-      errCard.innerHTML = '<div class="card-header"><div class="card-title" style="color:var(--red)">Erro ao iniciar analise</div></div><div style="padding:16px;color:var(--red)">' + (data.erro || 'Erro desconhecido') + '</div>';
-    }
-    btn.disabled = false;
-    btn.innerHTML = '▶ Rodar ML';
-    return;
-  }
-  
-  // Mostra loading no card (substitui conteudo)
-  var cardDetalhe = document.getElementById('card-ml-detalhe');
-  if (cardDetalhe) {
-    cardDetalhe.innerHTML = '<div class="card-header"><div class="card-title">Analise ML — ' + cargo + ' / ' + method + '</div></div><div style="padding:24px;text-align:center;color:var(--text-dim)"><div style="font-size:20px;margin-bottom:8px">Processando Isolation Forest...</div><div style="font-size:13px">Aguarde</div></div>';
-  }
-
-  // Polling
-  await pollJob(data.job_id, cargo, method, btn);
+  showTab('ml');
+  await rodarMLBeto(cargo, method);
 }
 
+async function rodarMLBeto(cargo, method) {
+  // Carrega comparacao em paralelo
+  fetch('/api/ml/comparar?cargo=' + encodeURIComponent(cargo))
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.methods || !d.methods.length) return;
+      var compCard = document.getElementById('card-comparacao');
+      var compCargo = document.getElementById('comp-cargo');
+      var compTable = document.getElementById('comp-table');
+      if (compCard) compCard.style.display = 'block';
+      if (compCargo) compCargo.textContent = d.cargo;
+      if (compTable) {
+        compTable.innerHTML = d.methods.map(function(m) {
+          return '<tr><td>' + m.label + '</td><td><strong style="color:' + (m.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)') + '">' + m.pct_anomalias_teste + '%</strong></td><td>' + m.score_medio + '</td><td><button class="btn btn-outline btn-sm" onclick="rodarMLComMetodo(\'' + m.method + '\');">Ver</button></td></tr>';
+        }).join('');
+      }
+    }).catch(function(e) { console.error('[comparar] erro:', e); });
+
+  var btn = document.getElementById('btn-rodar-ml');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="loading"></div> Processando...'; }
+  toast('Processando ' + (method === 'yoy' ? 'YoY' : method === 'cagr' ? 'CAGR' : 'Sem Ajuste') + '...', 'ok');
+
+  var res = await fetch('/api/ml/rodar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({method: method || 'yoy', cargo: cargo})
+  });
+  var data = await res.json();
+
+  if (data.status === 'done') {
+    mostrarResultadoML(data.data);
+  } else if (data.status === 'running') {
+    await pollJob(data.job_id, cargo, method, btn);
+  }
+
+  if (btn) { btn.disabled = false; btn.innerHTML = '▶ Ver Detalhado'; }
+}
+
+async function rodarML() {
+  var method = 'yoy';
+  var sel = document.getElementById('ml-cargo-select');
+  var cargo = sel ? sel.value : window._lastCargo || 'P115';
+  window._lastCargo = cargo;
+  showTab('ml');
+  await rodarMLBeto(cargo, method);
+}
+  
 async function pollJob(jobId, cargo, method, btn) {
   while (true) {
     await new Promise(r => setTimeout(r, 2000));
@@ -1181,7 +1174,7 @@ async function pollJob(jobId, cargo, method, btn) {
         console.error('[pollJob] ERRO em mostrarResultadoML:', e.message, e.stack);
       }
       btn.disabled = false;
-      btn.innerHTML = '▶ Rodar ML';
+      btn.innerHTML = '▶ Ver Detalhado';
       toast('✅ Análise concluída!', 'ok');
       break;
     } else if (data.status === 'error') {
@@ -1191,7 +1184,7 @@ async function pollJob(jobId, cargo, method, btn) {
         errCard.innerHTML = '<div class="card-header"><div class="card-title" style="color:var(--red)">Erro na analise ML</div></div><div style="padding:16px;color:var(--red)">' + (data.error || 'Erro desconhecido') + '</div>';
       }
       btn.disabled = false;
-      btn.innerHTML = '▶ Rodar ML';
+      btn.innerHTML = '▶ Ver Detalhado';
       break;
     }
   }
