@@ -981,22 +981,27 @@ function toast(msg, tipo = 'ok') {
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 function showTab(name) {
+  console.log('[showTab] name:', name, 'event:', typeof event);
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   if (event && event.target) event.target.classList.add('active');
   
   if (name === 'ml') {
-    // Hide/show regras buttons
-    ['btn-validar','btn-testar','btn-novaregra'].forEach(id => {
-      const el = document.getElementById(id);
+    console.log('[showTab] entrando ML, mlLoaded:', window.mlLoaded);
+    ['btn-validar','btn-testar','btn-novaregra'].forEach(function(id) {
+      var el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
     document.getElementById('btn-rodar-ml').style.display = 'inline-block';
-    if (!window.mlLoaded) { carregarCargosML(); window.mlLoaded = true; }
+    if (!window.mlLoaded) { 
+      console.log('[showTab] chamando carregarCargosML');
+      carregarCargosML(); 
+      window.mlLoaded = true; 
+    }
   } else {
-    ['btn-validar','btn-testar','btn-novaregra'].forEach(id => {
-      const el = document.getElementById(id);
+    ['btn-validar','btn-testar','btn-novaregra'].forEach(function(id) {
+      var el = document.getElementById(id);
       if (el) el.style.display = 'inline-block';
     });
     document.getElementById('btn-rodar-ml').style.display = 'none';
@@ -1005,9 +1010,10 @@ function showTab(name) {
 
 // ─── ML ─────────────────────────────────────────────────────────────────────
 function carregarCargosML() {
+  console.log('[ML] carregarCargosML chamado, token:', getToken().slice(0,20));
   fetch('/api/ml/cargos')
-    .then(r => r.json())
-    .then(d => {
+    .then(function(r) { console.log('[ML] /api/ml/cargos status:', r.status); return r.json(); })
+    .then(function(d) { console.log('[ML] cargos recebidos:', d.cargos ? d.cargos.length : 'ERRO', d);
       const sel = document.getElementById('ml-cargo-select');
       // Ordena por n_registros desc (maior primero)
       const sorted = [...d.cargos].sort((a,b) => b.n_registros - a.n_registros);
@@ -1061,7 +1067,7 @@ async function carregarML() {
 }
 
 async function rodarML() {
-  // Troca pra aba ML
+  console.log('[rodarML] chamado');
   showTab('ml');
   const cargo = document.getElementById('ml-cargo-select')?.value || 'P115';
   const method = document.getElementById('ml-metodo-select')?.value || 'yoy';
@@ -1131,6 +1137,7 @@ async function pollJob(jobId, cargo, method, btn) {
 }
 
 function mostrarResultadoML(r) {
+  console.log('[mostrarResultadoML] chamado, cargo:', r.cargo, 'method:', r.method, 'pct_teste:', r.pct_anomalias_teste);
   document.getElementById('card-ml-detalhe').style.display = 'block';
   document.getElementById('ml-cargo-titulo').textContent = r.cargo + ' / ' + r.method;
   document.getElementById('ml-periodo-treino').textContent = r.periodo_treino;
