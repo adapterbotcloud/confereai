@@ -4,13 +4,124 @@
   "n_total": 9265,
   "n_treino": 7412,
   "n_teste": 1853,
-  "periodo_treino": "2020/1 - 2025/9",
-  "periodo_teste": "2020/1 - 2025/9",
+  "periodo_treino": "2020/1 - 2025/12",
+  "periodo_teste": "2020/1 - 2025/12",
   "n_rubricas": 46,
   "yoy_validos_pct": 100.0,
-  "pct_anomalias_treino": 0.0,
-  "pct_anomalias_teste": 0.0,
-  "score_medio_teste": 0.0,
-  "top_vinculos_anomalos": [],
-  "timestamp": "2026-04-10T16:41:53.823007"
+  "pct_anomalias_treino": 5.0,
+  "pct_anomalias_teste": 8.1,
+  "score_medio_teste": 0.0847,
+  "top_vinculos_anomalos": [
+    {
+      "isn_vinculo": "329683",
+      "qtd_meses": 8,
+      "score_medio": -0.0538
+    },
+    {
+      "isn_vinculo": "380508",
+      "qtd_meses": 2,
+      "score_medio": -0.04
+    },
+    {
+      "isn_vinculo": "380507",
+      "qtd_meses": 2,
+      "score_medio": -0.0394
+    },
+    {
+      "isn_vinculo": "329655",
+      "qtd_meses": 9,
+      "score_medio": -0.0333
+    },
+    {
+      "isn_vinculo": "329661",
+      "qtd_meses": 10,
+      "score_medio": -0.0309
+    },
+    {
+      "isn_vinculo": "329608",
+      "qtd_meses": 6,
+      "score_medio": -0.0303
+    },
+    {
+      "isn_vinculo": "329684",
+      "qtd_meses": 13,
+      "score_medio": -0.0258
+    },
+    {
+      "isn_vinculo": "329653",
+      "qtd_meses": 9,
+      "score_medio": -0.0256
+    },
+    {
+      "isn_vinculo": "329730",
+      "qtd_meses": 9,
+      "score_medio": -0.0239
+    },
+    {
+      "isn_vinculo": "329614",
+      "qtd_meses": 5,
+      "score_medio": -0.0231
+    },
+    {
+      "isn_vinculo": "329682",
+      "qtd_meses": 5,
+      "score_medio": -0.0226
+    },
+    {
+      "isn_vinculo": "599570",
+      "qtd_meses": 12,
+      "score_medio": -0.0215
+    },
+    {
+      "isn_vinculo": "329654",
+      "qtd_meses": 11,
+      "score_medio": -0.0209
+    },
+    {
+      "isn_vinculo": "329681",
+      "qtd_meses": 1,
+      "score_medio": -0.0198
+    },
+    {
+      "isn_vinculo": "329659",
+      "qtd_meses": 7,
+      "score_medio": -0.0191
+    },
+    {
+      "isn_vinculo": "591361",
+      "qtd_meses": 7,
+      "score_medio": -0.0186
+    },
+    {
+      "isn_vinculo": "329610",
+      "qtd_meses": 12,
+      "score_medio": -0.0171
+    },
+    {
+      "isn_vinculo": "329652",
+      "qtd_meses": 5,
+      "score_medio": -0.0166
+    },
+    {
+      "isn_vinculo": "329660",
+      "qtd_meses": 6,
+      "score_medio": -0.0157
+    },
+    {
+      "isn_vinculo": "297905",
+      "qtd_meses": 4,
+      "score_medio": -0.014
+    },
+    {
+      "isn_vinculo": "813787",
+      "qtd_meses": 7,
+      "score_medio": -0.0136
+    },
+    {
+      "isn_vinculo": "329658",
+      "qtd_meses": 1,
+      "score_medio": -0.0132
+    }
+  ],
+  "timestamp": "2026-04-10T17:17:02.371553"
 }

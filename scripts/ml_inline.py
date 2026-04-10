@@ -38,6 +38,8 @@ def _load_data():
         for col in df.columns:
             df[col] = df[col].str.strip().str.strip('"')
         df['vlr_calculado'] = pd.to_numeric(df['vlr_calculado'], errors='coerce')
+        df['num_mes'] = df['num_mes'].astype(int)
+        df['num_ano'] = df['num_ano'].astype(int)
         df['cod_situacao_funcional'] = df['cod_situacao_funcional'].str.strip()
         df['dsc_situacao'] = df['cod_situacao_funcional'].map(SITUACAO_MAP).fillna(df['cod_situacao_funcional'])
         _load_data._df = df
@@ -46,6 +48,11 @@ def _load_data():
 
 def run_yoy(df_cargo, cargo, contamination=0.05):
     """YoY + Isolation Forest para um cargo."""
+    
+    # Garante que num_mes e num_ano sao int (nao string)
+    df_cargo = df_cargo.copy()
+    df_cargo['num_mes'] = df_cargo['num_mes'].astype(int)
+    df_cargo['num_ano'] = df_cargo['num_ano'].astype(int)
     
     # Pivot: rubricas em colunas
     df_pivot = df_cargo.pivot_table(
@@ -67,7 +74,7 @@ def run_yoy(df_cargo, cargo, contamination=0.05):
     if n_rows < 24:
         return None
     
-    # YoY vetorizado
+    # YoY vetorizado: shift(1) = mesmo mes, ano anterior (cada grupo tem 2 anos: 2024 e 2025)
     df_yoy = df_cargo.pivot_table(
         index=['isn_vinculo', 'num_ano', 'num_mes'],
         columns='isn_rubrica',
@@ -84,7 +91,7 @@ def run_yoy(df_cargo, cargo, contamination=0.05):
         cols_yoy.append(col_yoy)
         tmp = df_yoy[['isn_vinculo', 'num_mes', rub]].copy()
         tmp = tmp.sort_values(['isn_vinculo', 'num_mes']).reset_index(drop=True)
-        tmp[col_yoy] = tmp.groupby(['isn_vinculo', 'num_mes'])[rub].shift(12)
+        tmp[col_yoy] = tmp.groupby(['isn_vinculo', 'num_mes'])[rub].shift(1)
         df_yoy[col_yoy] = tmp[col_yoy].values
     
     for rub, yoy_col in zip(cols_rub, cols_yoy):

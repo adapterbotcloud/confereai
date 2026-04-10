@@ -1,0 +1,16 @@
+{
+  "cargo": "C015",
+  "method": "yoy",
+  "n_total": 40,
+  "n_treino": 32,
+  "n_teste": 8,
+  "periodo_treino": "2020/1 - 2023/12",
+  "periodo_teste": "2023/1 - 2024/12",
+  "n_rubricas": 4,
+  "yoy_validos_pct": 100.0,
+  "pct_anomalias_treino": 3.1,
+  "pct_anomalias_teste": 0.0,
+  "score_medio_teste": 0.1183,
+  "top_vinculos_anomalos": [],
+  "timestamp": "2026-04-10T17:19:39.109837"
+}

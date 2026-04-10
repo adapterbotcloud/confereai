@@ -361,6 +361,71 @@
 </head>
 <body>
 
+<!-- Login Overlay -->
+<div id="login-overlay" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center;">
+  <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:40px; width:100%; max-width:360px; text-align:center">
+    <div style="font-size:48px; margin-bottom:16px">🐐</div>
+    <div style="font-size:20px; font-weight:700; margin-bottom:8px; color:var(--text)">ConfereAI</div>
+    <div style="font-size:14px; color:var(--text-dim); margin-bottom:32px">Admin de Regras</div>
+    <div id="login-erro" style="color:var(--red); font-size:13px; margin-bottom:12px; display:none"></div>
+    <input id="login-user" type="text" placeholder="Usuario" value="admin"
+      style="width:100%; padding:12px; margin-bottom:12px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px; box-sizing:border-box">
+    <input id="login-pass" type="password" placeholder="Senha"
+      style="width:100%; padding:12px; margin-bottom:16px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px; box-sizing:border-box">
+    <button onclick="doLogin()" id="login-btn"
+      style="width:100%; padding:12px; background:var(--accent); color:#0f1117; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer">Entrar</n></button>
+  </div>
+</div>
+
+<script>
+var AUTH = { user: null, token: null };
+
+async function doLogin() {
+  const user = document.getElementById('login-user').value;
+  const pass = document.getElementById('login-pass').value;
+  const btn = document.getElementById('login-btn');
+  const erro = document.getElementById('login-erro');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  erro.style.display = 'none';
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({user, pass})
+    });
+    if (r.ok) {
+      AUTH.user = user;
+      document.getElementById('login-overlay').style.display = 'none';
+      initApp();
+    } else {
+      erro.textContent = 'Usuario ou senha invalidos'; erro.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Entrar';
+    }
+  } catch(e) { erro.textContent = 'Erro de conexao'; erro.style.display = 'block'; btn.disabled = false; btn.textContent = 'Entrar'; }
+}
+
+// Check existing session
+(async function() {
+  try {
+    const r = await fetch('/api/me', {credentials:'include'});
+    if (r.ok) {
+      const d = await r.json();
+      if (d.authenticated) {
+        AUTH.user = d.user;
+        initApp();
+        return;
+      }
+    }
+  } catch(e) {}
+  document.getElementById('login-overlay').style.display = 'flex';
+})();
+
+function initApp() {
+  carregarRegras();
+  window.mlLoaded = false;
+}
+</script>
+
 <header>
   <div class="logo">🐐 ConfereAI <span>/ Admin de Regras</span></div>
   <div class="header-actions">
@@ -905,15 +970,23 @@ function carregarCargosML() {
     .then(r => r.json())
     .then(d => {
       const sel = document.getElementById('ml-cargo-select');
-      sel.innerHTML = d.cargos.map(c => 
-        `<option value="${c.cargo}">${c.cargo} (${c.n_registros} reg)</option>`
+      // Ordena por n_registros desc (maior primero)
+      const sorted = [...d.cargos].sort((a,b) => b.n_registros - a.n_registros);
+      sel.innerHTML = sorted.map(c => 
+        `<option value="${c.cargo}">${c.cargo} (${c.n_registros.toLocaleString('pt-BR')} reg)</option>`
       ).join('');
       document.getElementById('ml-cargos').textContent = d.cargos.length;
-      if (d.cargos.length > 0) carregarML();
+      // Mensagem inicial: aguargando clique no botao
+      document.getElementById('card-ml-detalhe').style.display = 'block';
+      document.getElementById('ml-cargo-titulo').textContent = 'Selecione um cargo';
+      document.getElementById('ml-pct-treino').textContent = '—';
+      document.getElementById('ml-pct-teste').textContent = '—';
+      document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:40px"><div style="font-size:36px; margin-bottom:8px">👆</div><div style="font-size:15px; font-weight:600">Clique em "Rodar ML" para analisar</div><div style="font-size:13px; color:var(--text-dim); margin-top:4px">Selecione um cargo no dropdown acima</div></td></tr>';
     });
 }
 
 async function carregarML() {
+  showTab('ml');
   const cargo = document.getElementById('ml-cargo-select').value;
   const method = document.getElementById('ml-metodo-select').value;
   if (!cargo) return;
@@ -949,9 +1022,28 @@ async function carregarML() {
 }
 
 async function rodarML() {
+  // Troca pra aba ML
+  showTab('ml');
   const cargo = document.getElementById('ml-cargo-select')?.value || 'P115';
   const method = document.getElementById('ml-metodo-select')?.value || 'yoy';
-  
+
+  // Carrega comparacao em paralelo
+  fetch(`/api/ml/comparar?cargo=${cargo}`)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.methods || !d.methods.length) return;
+      document.getElementById('comp-cargo').textContent = d.cargo;
+      document.getElementById('comp-table').innerHTML = d.methods.map(m => `
+        <tr>
+          <td>${m.label}</td>
+          <td><strong style="color:${m.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)'">${m.pct_anomalias_teste}%</strong></td>
+          <td>${m.score_medio}</td>
+          <td><button class="btn btn-outline btn-sm" onclick="document.getElementById('ml-metodo-select').value='${m.method}'">Ver</button></td>
+        </tr>
+      `).join('');
+      document.getElementById('card-comparacao').style.display = 'block';
+    });
+
   const btn = document.getElementById('btn-rodar-ml');
   btn.disabled = true;
   btn.innerHTML = '<div class="loading"></div> Rodando...';
@@ -966,6 +1058,13 @@ async function rodarML() {
   const data = await res.json();
   
   if (!data.ok) { toast('Erro: ' + data.erro, 'erro'); btn.disabled = false; btn.innerHTML = '▶ Rodar ML'; return; }
+  
+  // Mostra loading no card
+  document.getElementById('card-ml-detalhe').style.display = 'block';
+  document.getElementById('ml-cargo-titulo').textContent = cargo + ' / ' + method;
+  document.getElementById('ml-pct-treino').textContent = '...';
+  document.getElementById('ml-pct-teste').textContent = '...';
+  document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:40px"><div class="loading" style="margin:0 auto 8px"></div><div style="font-size:14px">Processando Isolation Forest...</div></td></tr>';
   
   // Polling
   await pollJob(data.job_id, cargo, method, btn);
@@ -1016,9 +1115,8 @@ function mostrarResultadoML(r) {
       </tr>
     `).join('');
   } else {
-    document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--green); padding:24px">✅ Nenhuma anomalia detectada</td></tr>';
+    document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:32px"><div style="font-size:48px; margin-bottom:8px">✅</div><div style="font-size:16px; font-weight:600; color:var(--green)">Nenhuma anomalia detectada</div><div style="font-size:13px; color:var(--text-dim); margin-top:4px">Isolation Forest não encontrou vínculos fora do padrão esperado neste cargo.</div></td></tr>';
   }
-}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 window.mlLoaded = false;

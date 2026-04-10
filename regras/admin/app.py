@@ -15,15 +15,56 @@ Endpoints:
 
 import json
 import subprocess
+import secrets
 from pathlib import Path
-from flask import Flask, request, jsonify, send_from_directory
+from functools import wraps
+from flask import Flask, request, jsonify, send_from_directory, session
 from flask_cors import CORS
 
 app = Flask(__name__, static_folder='static')
-CORS(app)
+app.secret_key = secrets.token_hex(32)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+CORS(app, supports_credentials=True)
 
 REGRAS_FILE = Path(__file__).parent.parent / 'regras_ativos.json'
 DATA_FILE = Path(__file__).parent.parent.parent / 'data' / 'historico_5_seplag.csv'
+VALID_USER = 'admin'
+VALID_PASS = '123admin#'
+
+
+def require_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('authenticated'):
+            return jsonify({'erro': 'Nao autenticado'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.json or {}
+    user = data.get('user', '')
+    pw = data.get('pass', '')
+    if user == VALID_USER and pw == VALID_PASS:
+        session['authenticated'] = True
+        session.permanent = True
+        return jsonify({'ok': True, 'user': user})
+    return jsonify({'ok': False, 'erro': 'Credenciais invalidas'}), 401
+
+
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    session.clear()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/me', methods=['GET'])
+def api_me():
+    if session.get('authenticated'):
+        return jsonify({'user': VALID_USER, 'authenticated': True})
+    return jsonify({'authenticated': False})
 
 
 def carregar_regras():
@@ -43,12 +84,14 @@ def index():
 
 # ─── API DE REGRAS ────────────────────────────────────────────────────────────
 
+@require_auth
 @app.route('/api/regras', methods=['GET'])
 def listar_regras():
     data = carregar_regras()
     return jsonify(data)
 
 
+@require_auth
 @app.route('/api/regras', methods=['POST'])
 def adicionar_regra():
     data = carregar_regras()
@@ -66,6 +109,7 @@ def adicionar_regra():
     return jsonify({'ok': True, 'regra': nova}), 201
 
 
+@require_auth
 @app.route('/api/regras/<regra_id>', methods=['PUT'])
 def atualizar_regra(regra_id):
     data = carregar_regras()
@@ -82,6 +126,7 @@ def atualizar_regra(regra_id):
     return jsonify({'ok': False, 'erro': 'Regra não encontrada'}), 404
 
 
+@require_auth
 @app.route('/api/regras/<regra_id>', methods=['DELETE'])
 def remover_regra(regra_id):
     data = carregar_regras()
@@ -100,6 +145,7 @@ def remover_regra(regra_id):
 
 # ─── TESTAR REGRAS ─────────────────────────────────────────────────────────────
 
+@require_auth
 @app.route('/api/regras/testar', methods=['POST'])
 def testar_regras():
     """Roda as regras ativas contra os dados de folha."""
@@ -178,6 +224,7 @@ def testar_regras():
     return jsonify({'ok': True, 'total_vinculos': 0, 'total_violacoes': 0, 'valor_total': 0, 'por_regra': [], 'detalhes': []})
 
 
+@require_auth
 @app.route('/api/regras/validar', methods=['GET'])
 def validar_regras():
     """Valida a estrutura do JSON de regras."""
@@ -198,6 +245,7 @@ def validar_regras():
 
 # ─── DADOS RESUMO ──────────────────────────────────────────────────────────────
 
+@require_auth
 @app.route('/api/dados/resumo', methods=['GET'])
 def dados_resumo():
     """Resumo dos dados de folha para contexto."""
@@ -226,6 +274,7 @@ def dados_resumo():
 
 # ─── API DE ML ──────────────────────────────────────────────────────────────
 
+@require_auth
 @app.route('/api/ml/resumo', methods=['GET'])
 def ml_resumo():
     """Retorna resumo de todos os métodos ML disponíveis."""
@@ -251,6 +300,7 @@ def ml_resumo():
     return jsonify({'methods': methods})
 
 
+@require_auth
 @app.route('/api/ml/resultados', methods=['GET'])
 def ml_resultados():
     """Retorna resultados consolidados de todos os métodos."""
@@ -310,26 +360,7 @@ def ml_resultados():
     return jsonify({'ok': False, 'erro': 'Estrutura invalida'})
 
 
-@app.route('/api/ml/cargos', methods=['GET'])
-def ml_cargos():
-    """Lista todos os cargos disponíveis com resultado ML."""
-    from pathlib import Path
-    
-    base = Path(__file__).parent.parent.parent / 'data' / 'baseline_results_yoy'
-    
-    cargos = []
-    for f in sorted(base.glob('anomalias_yoy_*.csv')):
-        cargo = f.stem.replace('anomalias_yoy_', '')
-        try:
-            import pandas as pd
-            n = len(pd.read_csv(f, delimiter=';', encoding='utf-8'))
-            cargos.append({'cargo': cargo, 'n_registros': n, 'method': 'yoy'})
-        except:
-            pass
-    
-    return jsonify({'cargos': cargos})
-
-
+@require_auth
 @app.route('/api/ml/comparar', methods=['GET'])
 def ml_comparar():
     """Compara todos os métodos para um cargo."""
@@ -369,6 +400,7 @@ def ml_comparar():
 
 # ─── ML TEMPO REAL ──────────────────────────────────────────────────────────
 
+@require_auth
 @app.route('/api/ml/rodar', methods=['POST'])
 def ml_rodar():
     """
@@ -391,6 +423,7 @@ def ml_rodar():
     return jsonify({'ok': True, 'job_id': job_id, 'method': method, 'cargo': cargo})
 
 
+@require_auth
 @app.route('/api/ml/status/<job_id>', methods=['GET'])
 def ml_status(job_id):
     """Verifica status de um job de ML."""
@@ -404,6 +437,7 @@ def ml_status(job_id):
     return jsonify({'ok': True, **job})
 
 
+@require_auth
 @app.route('/api/ml/resultado/<job_id>', methods=['GET'])
 def ml_resultado(job_id):
     """Retorna resultado de um job completo."""
@@ -424,6 +458,7 @@ def ml_resultado(job_id):
     return jsonify({'ok': True, 'status': 'done', 'result': job.get('result')})
 
 
+@require_auth
 @app.route('/api/ml/carregar_cache', methods=['GET'])
 def ml_carregar_cache():
     """Carrega resultado do cache ou roda se não existir."""
@@ -449,158 +484,25 @@ if __name__ == '__main__':
     print("  Admin de Regras - ConfereAI")
     print("  http://localhost:5001")
     print("=" * 50)
-    app.run(host='0.0.0.0', port=5001, debug=True)
-
-# ─── API DE ML ──────────────────────────────────────────────────────────────
-
-@app.route('/api/ml/resumo', methods=['GET'])
-def ml_resumo():
-    """Retorna resumo de todos os métodos ML disponíveis."""
-    import os, json
-    from pathlib import Path
-    
-    methods = []
-    for method in ['yoy', 'ajustado', 'temporal']:
-        base = Path(__file__).parent.parent.parent / 'data' / f'baseline_results_{method}'
-        resumo_file = base / f'resumo_{method}.json'
-        
-        if resumo_file.exists():
-            with open(resumo_file) as f:
-                data = json.load(f)
-            
-            total_anomalias = sum(r.get('n_anomalias_teste', 0) for r in data if isinstance(data, list))
-            methods.append({
-                'method': method,
-                'label': {
-                    'yoy': 'YoY Year-over-Year',
-                    'ajustado': 'CAGR Ajustado',
-                    'temporal': 'Temporal (baseline)',
-                }.get(method, method),
-                'path': str(resumo_file),
-                'data_ultima_analise': '2026-04-10',
-            })
-    
-    return jsonify({'methods': methods})
+    app.run(host='0.0.0.0', port=5001, debug=False, use_reloader=False)
 
 
-@app.route('/api/ml/resultados', methods=['GET'])
-def ml_resultados():
-    """Retorna resultados consolidados de todos os métodos."""
-    import os, json, pandas as pd
-    from pathlib import Path
-    
-    cargo = request.args.get('cargo', 'P115')
-    method = request.args.get('method', 'yoy')
-    
-    base = Path(__file__).parent.parent.parent / 'data' / f'baseline_results_{method}'
-    csv_file = base / f'anomalias_{method}_{cargo}.csv'
-    
-    if not csv_file.exists():
-        return jsonify({'ok': False, 'erro': f'Arquivo nao encontrado: {cargo}'}), 404
-    
-    df = pd.read_csv(csv_file, delimiter=';', encoding='utf-8')
-    
-    # Colunas de rubrica
-    cols_rub = [c for c in df.columns if c not in ['isn_vinculo','num_ano','num_mes','IF_label','IF_score','anomalo']]
-    cols_rub_original = [c for c in cols_rub if not c.endswith('_yoy')]
-    cols_yoy = [c for c in cols_rub if c.endswith('_yoy')]
-    
-    n_total = len(df)
-    n_treino = int(n_total * 0.8)
-    df_treino = df.iloc[:n_treino]
-    df_teste = df.iloc[n_treino:]
-    
-    # Top anomalias no teste (mais negativas = mais anômalas)
-    df_teste_copy = df_teste.copy()
-    if 'IF_score' in df_teste_copy.columns:
-        df_teste_copy = df_teste_copy.sort_values('IF_score', ascending=True)
-        
-        # Vínculos mais anômalos
-        top_anomalos = df_teste_copy[df_teste_copy['anomalo'] == 1].groupby('isn_vinculo').agg(
-            qtd_meses=('anomalo', 'count'),
-            score_medio=('IF_score', 'mean'),
-            valor_total=('vlr_calculado' if 'vlr_calculado' in df_teste_copy.columns else cols_rub_original[0], 'sum')
-        ).reset_index().sort_values('score_medio', ascending=True).head(20)
-        
-        # Período do teste
-        periodo_treino = f"{int(df_treino.num_ano.min())}/{int(df_treino.num_mes.min())} a {int(df_treino.num_ano.max())}/{int(df_treino.num_mes.max())}"
-        periodo_teste = f"{int(df_teste.num_ano.min())}/{int(df_teste.num_mes.min())} a {int(df_teste.num_ano.max())}/{int(df_teste.num_mes.max())}"
-        
-        return jsonify({
-            'ok': True,
-            'cargo': cargo,
-            'method': method,
-            'n_treino': n_treino,
-            'n_teste': len(df_teste),
-            'periodo_treino': periodo_treino,
-            'periodo_teste': periodo_teste,
-            'pct_anomalias_treino': round(df_treino['anomalo'].mean() * 100, 1),
-            'pct_anomalias_teste': round(df_teste['anomalo'].mean() * 100, 1),
-            'top_vinculos_anomalos': top_anomalos.to_dict('records'),
-            'n_rubricas': len(cols_rub_original),
-        })
-    
-    return jsonify({'ok': False, 'erro': 'Estrutura de dados invalida'})
-
-
+@require_auth
 @app.route('/api/ml/cargos', methods=['GET'])
 def ml_cargos():
-    """Lista todos os cargos disponíveis com resultado ML."""
+    """Lista todos os cargos disponíveis no dataset atual."""
     import pandas as pd
-    from pathlib import Path
-    
-    base = Path(__file__).parent.parent.parent / 'data' / 'baseline_results_yoy'
-    
-    cargos = []
-    for f in sorted(base.glob('anomalias_yoy_*.csv')):
-        cargo = f.stem.replace('anomalias_yoy_', '')
-        try:
-            df = pd.read_csv(f, delimiter=';', encoding='utf-8', nrows=1)
-            n = len(pd.read_csv(f, delimiter=';', encoding='utf-8'))
-            cargos.append({
-                'cargo': cargo,
-                'n_registros': n,
-                'method': 'yoy',
-            })
-        except:
-            pass
-    
+
+    df = pd.read_csv('/root/confereai/data/historico_5_seplag.csv', delimiter=';', dtype=str)
+    for col in df.columns:
+        df[col] = df[col].str.strip().str.strip('"')
+
+    counts = df.groupby('cod_cargo').size().reset_index(name='n_registros')
+    counts = counts.sort_values('cod_cargo')
+
+    cargos = [
+        {'cargo': row['cod_cargo'], 'n_registros': int(row['n_registros']), 'method': 'yoy'}
+        for _, row in counts.iterrows()
+    ]
+
     return jsonify({'cargos': cargos})
-
-
-@app.route('/api/ml/comparar', methods=['GET'])
-def ml_comparar():
-    """Compara todos os métodos para um cargo."""
-    import pandas as pd, json
-    from pathlib import Path
-    
-    cargo = request.args.get('cargo', 'P115')
-    
-    results = []
-    for method in ['yoy', 'ajustado', 'temporal']:
-        base = Path(__file__).parent.parent.parent / 'data' / f'baseline_results_{method}'
-        csv_file = base / f'anomalias_{method}_{cargo}.csv'
-        resumo_file = base / f'resumo_{method}.json'
-        
-        if not csv_file.exists():
-            continue
-        
-        try:
-            df = pd.read_csv(csv_file, delimiter=';', encoding='utf-8')
-            n_total = len(df)
-            n_treino = int(n_total * 0.8)
-            df_teste = df.iloc[n_treino:]
-            
-            pct_teste = df_teste['anomalo'].mean() * 100 if 'anomalo' in df_teste.columns else 0
-            score_medio = df_teste['IF_score'].mean() if 'IF_score' in df_teste.columns else 0
-            
-            results.append({
-                'method': method,
-                'label': {'yoy': 'YoY', 'ajustado': 'CAGR', 'temporal': 'Sem Ajuste'}.get(method, method),
-                'pct_anomalias_teste': round(pct_teste, 1),
-                'score_medio': round(score_medio, 4),
-            })
-        except Exception as e:
-            pass
-    
-    return jsonify({'cargo': cargo, 'methods': results})

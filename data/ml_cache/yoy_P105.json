@@ -4,13 +4,29 @@
   "n_total": 4002,
   "n_treino": 3201,
   "n_teste": 801,
-  "periodo_treino": "2020/1 - 2025/9",
-  "periodo_teste": "2020/1 - 2025/9",
+  "periodo_treino": "2020/1 - 2025/12",
+  "periodo_teste": "2020/1 - 2025/12",
   "n_rubricas": 22,
   "yoy_validos_pct": 100.0,
-  "pct_anomalias_treino": 0.0,
-  "pct_anomalias_teste": 0.0,
-  "score_medio_teste": 0.0,
-  "top_vinculos_anomalos": [],
-  "timestamp": "2026-04-10T16:42:40.993240"
+  "pct_anomalias_treino": 4.9,
+  "pct_anomalias_teste": 5.5,
+  "score_medio_teste": 0.119,
+  "top_vinculos_anomalos": [
+    {
+      "isn_vinculo": "297489",
+      "qtd_meses": 35,
+      "score_medio": -0.1195
+    },
+    {
+      "isn_vinculo": "297242",
+      "qtd_meses": 7,
+      "score_medio": -0.0599
+    },
+    {
+      "isn_vinculo": "297602",
+      "qtd_meses": 2,
+      "score_medio": -0.0032
+    }
+  ],
+  "timestamp": "2026-04-10T17:17:26.251828"
 }
