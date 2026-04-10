@@ -1122,7 +1122,8 @@ async function pollJob(jobId, cargo, method, btn) {
     const data = await res.json();
     
     if (data.status === 'done') {
-      mostrarResultadoML(data.result);
+      console.log('[pollJob] job done, result:', JSON.stringify(data.result).slice(0,200));
+      try { mostrarResultadoML(data.result); } catch(e) { console.error('[pollJob] ERRO em mostrarResultadoML:', e.message, 'result:', data.result); }
       btn.disabled = false;
       btn.innerHTML = '▶ Rodar ML';
       toast('✅ Análise concluída!', 'ok');
