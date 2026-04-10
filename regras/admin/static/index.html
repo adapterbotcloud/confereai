@@ -1270,10 +1270,11 @@ function voltarFormML() {
   window._restoringML = true;
   var selCargo = document.getElementById('ml-cargo-select');
   if (selCargo && cargos.length) {
-    selCargo.innerHTML = sorted.map(function(c) {
-      return '<option value="' + c.cargo + '">' + c.cargo + ' (' + c.n_registros.toLocaleString('pt-BR') + ' reg)</option>';
+    // Reconstrói options COM selected já setado (mais confiável que .value depois)
+    var opts = sorted.map(function(c) {
+      return '<option value="' + c.cargo + '"' + (c.cargo === cargoValor ? ' selected' : '') + '>' + c.cargo + ' (' + c.n_registros.toLocaleString('pt-BR') + ' reg)</option>';
     }).join('');
-    selCargo.value = cargoValor;
+    selCargo.innerHTML = opts;
   }
   // Mostra card-ml-detalhe com placeholder ANTES de reabilitar ML
   var card = document.getElementById('card-ml-detalhe');
