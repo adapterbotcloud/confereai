@@ -1169,9 +1169,14 @@ async function pollJob(jobId, cargo, method, btn) {
     const data = await res.json();
     
     if (data.status === 'done') {
-      console.log('[pollJob] job done, result keys:', Object.keys(data.result || {}));
-      console.log('[pollJob] tab-ml exists:', !!document.getElementById('tab-ml'));
-      try { mostrarResultadoML(data.result); console.log('[pollJob] mostrarResultadoML returned ok'); } catch(e) { console.error('[pollJob] ERRO em mostrarResultadoML:', e.message, e.stack); }
+      console.log('[pollJob] job done! status:', data.status, 'result keys:', Object.keys(data.result || {}));
+      try {
+        console.log('[pollJob] calling mostrarResultadoML with cargo:', data.result.cargo, 'method:', data.result.method);
+        mostrarResultadoML(data.result);
+        console.log('[pollJob] mostrarResultadoML completed ok');
+      } catch(e) {
+        console.error('[pollJob] ERRO em mostrarResultadoML:', e.message, e.stack);
+      }
       btn.disabled = false;
       btn.innerHTML = '▶ Rodar ML';
       toast('✅ Análise concluída!', 'ok');
@@ -1186,43 +1191,43 @@ async function pollJob(jobId, cargo, method, btn) {
 }
 
 function mostrarResultadoML(r) {
-  console.log('[mostrarResultadoML] called, keys:', Object.keys(r || {}));
-  var tabMl = document.getElementById('tab-ml');
-  console.log('[mostrarResultadoML] tab-ml:', !!tabMl, 'innerHTML len:', tabMl ? tabMl.innerHTML.length : 0);
-  var pct = r.pct_anomalias_teste;
-  var pctColor = pct > 5 ? '#ef5350' : '#66bb6a';
-  var top = (r.top_vinculos_anomalos || []).slice(0, 6);
-  var topRows = '';
-  if (top.length > 0) {
-    top.forEach(function(v) {
-      topRows += '<tr><td style="padding:3px 5px;font-family:monospace;font-size:11px">' + v.isn_vinculo + '</td><td style="padding:3px 5px;font-size:11px;text-align:center">' + v.qtd_meses + '</td><td style="padding:3px 5px;font-size:11px;color:#ef5350;text-align:right">' + v.score_medio.toFixed(4) + '</td></tr>';
-    });
-  } else {
-    topRows = '<tr><td colspan="3" style="padding:8px;text-align:center;color:#66bb6a;font-size:12px">✅ Nenhuma anomalia detectada</td></tr>';
+  console.log('[mostrarResultadoML] INICIO, keys:', Object.keys(r || {}));
+  try {
+    var pct = r.pct_anomalias_teste;
+    var pctColor = pct > 5 ? '#ef5350' : '#66bb6a';
+    var top = (r.top_vinculos_anomalos || []).slice(0, 6);
+    var topRows = '';
+    if (top.length > 0) {
+      top.forEach(function(v) {
+        topRows += '<tr><td style="padding:3px 5px;font-family:monospace;font-size:11px">' + v.isn_vinculo + '</td><td style="padding:3px 5px;font-size:11px;text-align:center">' + v.qtd_meses + '</td><td style="padding:3px 5px;font-size:11px;color:#ef5350;text-align:right">' + v.score_medio.toFixed(4) + '</td></tr>';
+      });
+    } else {
+      topRows = '<tr><td colspan="3" style="padding:8px;text-align:center;color:#66bb6a;font-size:12px">Sem anomalias detectadas</td></tr>';
+    }
+    var totalAnomalias = r.top_vinculos_anomalos ? r.top_vinculos_anomalos.length : 0;
+    var html = '<div style="background:#1a2a3a;border:2px solid #4fc3f7;border-radius:6px;padding:8px;margin-top:4px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+        '<div style="font-size:13px;font-weight:700;color:#4fc3f7">ML ' + r.cargo + ' / ' + r.method + '</div>' +
+        '<button onclick="voltarFormML()" style="background:#21253a;color:#e0e0e0;border:1px solid #2a2f45;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px">← Voltar</button>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;margin-bottom:6px">' +
+        '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center"><div style="font-size:14px;font-weight:700;color:#4fc3f7">' + r.pct_anomalias_treino + '%</div><div style="font-size:9px;color:#8892b0">Treino</div></div>' +
+        '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center"><div style="font-size:14px;font-weight:700;color:' + pctColor + '">' + pct + '%</div><div style="font-size:9px;color:#8892b0">Teste</div></div>' +
+        '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center"><div style="font-size:14px;font-weight:700;color:#e0e0e0">' + r.n_rubricas + '</div><div style="font-size:9px;color:#8892b0">Rubricas</div></div>' +
+      '</div>' +
+      '<div style="font-size:9px;color:#8892b0;margin-bottom:4px">Treino ' + r.n_treino + ' | Teste ' + r.n_teste + ' | ' + top.length + '/' + totalAnomalias + ' anomalias</div>' +
+      '<div style="max-height:140px;overflow-y:auto;border:1px solid #2a2f45;border-radius:4px">' +
+      '<table style="width:100%;border-collapse:collapse">' +
+        '<thead><tr style="background:#21253a"><th style="padding:3px 5px;text-align:left;font-size:9px;color:#8892b0">ISN</th><th style="padding:3px 5px;text-align:center;font-size:9px;color:#8892b0">Mes</th><th style="padding:3px 5px;text-align:right;font-size:9px;color:#8892b0">Score</th></tr></thead>' +
+        '<tbody>' + topRows + '</tbody></table></div></div>';
+    var tabMl = document.getElementById('tab-ml');
+    if (!tabMl) { console.error('[mostrarResultadoML] ERRO: tab-ml nao existe!'); return; }
+    console.log('[mostrarResultadoML] injetando HTML');
+    tabMl.innerHTML = html;
+    console.log('[mostrarResultadoML] OK');
+  } catch(e) {
+    console.error('[mostrarResultadoML] ERRO:', e.message);
   }
-  var totalAnomalias = r.top_vinculos_anomalos ? r.top_vinculos_anomalos.length : 0;
-  var html = '<div style="background:#1a2a3a;border:2px solid #4fc3f7;border-radius:6px;padding:8px;margin-top:4px;margin-bottom:0">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
-      '<div style="font-size:13px;font-weight:700;color:#4fc3f7">ML ' + r.cargo + ' / ' + r.method + '</div>' +
-      '<button onclick="voltarFormML()" style="background:#21253a;color:#e0e0e0;border:1px solid #2a2f45;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px">← Voltar</button>' +
-    '</div>' +
-    '<div style="display:flex;gap:6px;margin-bottom:6px">' +
-      '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center">' +
-        '<div style="font-size:14px;font-weight:700;color:#4fc3f7">' + r.pct_anomalias_treino + '%</div>' +
-        '<div style="font-size:9px;color:#8892b0">Treino</div></div>' +
-      '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center">' +
-        '<div style="font-size:14px;font-weight:700;color:' + pctColor + '">' + pct + '%</div>' +
-        '<div style="font-size:9px;color:#8892b0">Teste</div></div>' +
-      '<div style="flex:1;background:#21253a;padding:6px;border-radius:5px;text-align:center">' +
-        '<div style="font-size:14px;font-weight:700;color:#e0e0e0">' + r.n_rubricas + '</div>' +
-        '<div style="font-size:9px;color:#8892b0">Rubricas</div></div></div>' +
-    '<div style="font-size:9px;color:#8892b0;margin-bottom:4px">Treino ' + r.n_treino + ' | Teste ' + r.n_teste + ' | ' + top.length + '/' + totalAnomalias + ' anomalias</div>' +
-    '<div style="max-height:140px;overflow-y:auto;border:1px solid #2a2f45;border-radius:4px">' +
-    '<table style="width:100%;border-collapse:collapse">' +
-      '<thead><tr style="background:#21253a"><th style="padding:3px 5px;text-align:left;font-size:9px;color:#8892b0">ISN</th><th style="padding:3px 5px;text-align:center;font-size:9px;color:#8892b0">Mês</th><th style="padding:3px 5px;text-align:right;font-size:9px;color:#8892b0">Score</th></tr></thead>' +
-      '<tbody>' + topRows + '</tbody></table></div></div>';
-  var tabMl = document.getElementById('tab-ml');
-  tabMl.innerHTML = html;
 }
 
 function voltarFormML() {
