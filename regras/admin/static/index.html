@@ -1138,11 +1138,14 @@ async function pollJob(jobId, cargo, method, btn) {
 }
 
 function mostrarResultadoML(r) {
-  console.log('[mostrarResultadoML] chamado, cargo:', r.cargo, 'method:', r.method, 'pct_teste:', r.pct_anomalias_teste);
+  console.log('[mostrarResultadoML] INICIO, keys:', Object.keys(r).join(','));
+  console.log('[mostrarResultadoML] cargo:', r.cargo, 'method:', r.method, 'pct_teste:', r.pct_anomalias_teste);
+  var card = document.getElementById('card-ml-detalhe');
+  console.log('[mostrarResultadoML] card-ml-detalhe:', card ? 'EXISTE, display=' + getComputedStyle(card).display : 'NULL');
   document.getElementById('card-ml-detalhe').style.display = 'block';
   document.getElementById('ml-cargo-titulo').textContent = r.cargo + ' / ' + r.method;
-  document.getElementById('ml-periodo-treino').textContent = r.periodo_treino;
-  document.getElementById('ml-periodo-teste').textContent = r.periodo_teste;
+  document.getElementById('ml-periodo-treino').textContent = r.periodo_treino || '-';
+  document.getElementById('ml-periodo-teste').textContent = r.periodo_teste || '-';
   document.getElementById('ml-pct-treino').textContent = r.pct_anomalias_treino + '%';
   document.getElementById('ml-pct-teste').textContent = r.pct_anomalias_teste + '%';
   document.getElementById('ml-pct-teste').style.color = r.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)';
@@ -1151,18 +1154,15 @@ function mostrarResultadoML(r) {
   document.getElementById('ml-n-teste').textContent = r.n_teste;
   document.getElementById('ml-anomalias-treino').textContent = r.pct_anomalias_treino + '%';
   document.getElementById('ml-anomalias-teste').textContent = r.pct_anomalias_teste + '%';
+  console.log('[mostrarResultadoML] FIM, elementos atualizados');
   
-  const top = r.top_vinculos_anomalos || [];
+  var top = r.top_vinculos_anomalos || [];
   if (top.length > 0) {
-    document.getElementById('ml-top-anomalos').innerHTML = top.map(v => `
-      <tr>
-        <td><code>${v.isn_vinculo}</code></td>
-        <td>${v.qtd_meses}</td>
-        <td style="color:var(--red)">${v.score_medio}</td>
-      </tr>
-    `).join('');
+    document.getElementById('ml-top-anomalos').innerHTML = top.map(function(v) {
+      return '<tr><td><code>' + v.isn_vinculo + '</code></td><td>' + v.qtd_meses + '</td><td style="color:var(--red)">' + v.score_medio + '</td></tr>';
+    }).join('');
   } else {
-    document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:32px"><div style="font-size:48px; margin-bottom:8px">✅</div><div style="font-size:16px; font-weight:600; color:var(--green)">Nenhuma anomalia detectada</div><div style="font-size:13px; color:var(--text-dim); margin-top:4px">Isolation Forest não encontrou vínculos fora do padrão esperado neste cargo.</div></td></tr>';
+    document.getElementById('ml-top-anomalos').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:32px"><div style="font-size:48px; margin-bottom:8px">✅</div><div style="font-size:16px; font-weight:600; color:var(--green)">Nenhuma anomalia detectada</div></td></tr>';
   }
 }
 
