@@ -1167,6 +1167,11 @@ function mostrarResultadoML(r) {
       '<tbody>' + topRows + '</tbody></table></div>';
   var tabMl = document.getElementById('tab-ml');
   tabMl.innerHTML = html;
+  console.log('[mostrarResultadoML] innerHTML injetado, tabMl children:', tabMl.children.length);
+  // Confirma visual: forcando repaint
+  tabMl.style.display = 'none';
+  tabMl.offsetHeight; // trigger repaint
+  tabMl.style.display = 'block';
   toast('✅ ML: ' + r.cargo + ' = ' + pct + '% anomalias', pct > 5 ? 'aviso' : 'ok');
   window.scrollTo({top: 0, behavior: 'smooth'});
   console.log('[mostrarResultadoML] FIM - HTML injetado');
