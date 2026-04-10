@@ -1,9 +1,6 @@
+venv/
+venv64/
 __pycache__/
 *.pyc
-*.csv
-!data/baseline_results/*
-models/
-plots/
-normalizacao_consolidada/
-.DS_Store
-*.log
+data/*.csv
+!data/baseline_results*/
