@@ -1,0 +1,63 @@
+{
+  "_comment": "Arquivo de regras do ConfereAI - versionado no git. Edite via admin web ou diretamente.",
+  "_version": "1.0.0",
+  "_data_criacao": "2026-04-10",
+  "_ultima_alteracao": "2026-04-10",
+  "_autor": "CabraBot",
+  "regras": [
+    {
+      "id": "R001",
+      "nome": "Pensionista nao pode receber VENCIMENTO",
+      "descricao": "Servidor pensionista deve receber apenas pensao, nao salario ou provento",
+      "situacao_funcional": ["6"],
+      "rubrica_contem": ["VENCIMENTO", "PROVENTO"],
+      "rubrica_nao_contem": ["PENSAO"],
+      "acao": "ALERTA",
+      "severidade": "ALTA",
+      "status": "ativa"
+    },
+    {
+      "id": "R002",
+      "nome": "Pensionista nao pode receber GRAT TEMPO SERVICO",
+      "descricao": "Gratificacao por tempo de servico e rubrica de servidor ativo",
+      "situacao_funcional": ["6"],
+      "rubrica_contem": ["GRATIFICACAO POR TEMPO DE SERVICO"],
+      "acao": "ALERTA",
+      "severidade": "ALTA",
+      "status": "ativa"
+    },
+    {
+      "id": "R003",
+      "nome": "Pensao Alimento recebe apenas pensao",
+      "descricao": "Vinculo com pensao por alimentacao so pode receber rubricas de pensao",
+      "situacao_funcional": ["7"],
+      "rubrica_contem": [],
+      "rubrica_nao_contem": ["PENSAO"],
+      "acao": "ALERTA",
+      "severidade": "ALTA",
+      "status": "ativa"
+    },
+    {
+      "id": "R004",
+      "nome": "Afastado c/ onus nao pode receber VENCIMENTO",
+      "descricao": "Servidor afastado com onus deve receber PROVENTO, nao VENCIMENTO/SALARIO",
+      "situacao_funcional": ["2", "3", "4", "5"],
+      "rubrica_contem": ["VENCIMENTO/SALARIO"],
+      "rubrica_nao_contem": [],
+      "acao": "ALERTA",
+      "severidade": "MEDIA",
+      "status": "ativa"
+    },
+    {
+      "id": "R005",
+      "nome": "Civil Ativo com provento",
+      "descricao": "Civil ativo nao deveria ter rubrica com nome 'PROVENTO' (rubrica de inativo)",
+      "situacao_funcional": ["0"],
+      "rubrica_contem": ["PROVENTO"],
+      "rubrica_nao_contem": ["VENCIMENTO"],
+      "acao": "ALERTA",
+      "severidade": "BAIXA",
+      "status": "inativa"
+    }
+  ]
+}

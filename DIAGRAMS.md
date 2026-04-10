@@ -1,232 +1,205 @@
 # ConfereAI — Diagramas
 
-## Arquitetura Geral
+## Arquitetura Geral com Regras + ML
+
+```mermaid
+flowchart TD
+    A[Dados Brutos<br/>historico_5_seplag.csv] --> B{Pré-processamento}
+    
+    B --> B1[Limpar dados<br/>dsc_rubrica + cod_situacao_funcional]
+    B1 --> B2[Divisão Temporal 80/20]
+    
+    B2 --> C[Filtro por Regras<br/>regras_ativos.json]
+    B2 --> D[ML: Isolation Forest<br/>Autoencoder]
+    
+    C --> C1[Regras FN Payroll Audit]
+    D --> D1[Anomalias estatisticas]
+    
+    C1 --> E[Irregularidades por regra]
+    D1 --> F[Anomalias por ML]
+    
+    E --> G[Consolidação]
+    F --> G
+    G --> H[Relatório final]
+```
+
+## Pipeline Completo — Dados → Resultado
 
 ```mermaid
 flowchart LR
     subgraph Dados
-        A[historico_pagamento_15.csv]
+        A[historico_5_seplag.csv<br/>163k registros<br/>2020-2025]
     end
     
-    subgraph Pré-processamento
-        B[Consolidação de Rubricas]
-        C[Normalização StandardScaler]
+    subgraph Camada 1 — Regras
+        B[Admin Web<br/>regras.confereai.com]
+        C[regras_ativos.json<br/>versionado git]
+        D[Python: detectar_regras.py<br/>aplica regras nos dados]
     end
     
-    subgraph Métodos
-        D[Isolation Forest]
-        E[One-Class SVM]
-        F[Autoencoder]
-        G[YoY Year-over-Year]
-        H[Ajuste CAGR]
+    subgraph Camada 2 — ML
+        E[Filtro: remover<br/>irregularidades]
+        F[Normalizar YoY<br/>StandardScaler]
+        G[Isolation Forest<br/>contamination=0.05]
     end
     
-    subgraph Resultados
-        I[Anomalias por Cargo]
-        J[Métricas de Performance]
+    subgraph Resultado
+        H[Irregularidades<br/>por regra]
+        I[Anomalias<br/>por ML]
+        J[Consolidado<br/>Geral]
     end
     
-    A --> B --> C
-    C --> D
-    C --> E
-    C --> F
-    C --> H --> G
-    D --> I
-    E --> I
-    F --> I
+    A --> B --> C --> D
+    D --> E
+    E --> F --> G
+    A --> D
+    D --> H
     G --> I
+    H --> J
     I --> J
 ```
 
-## Pipeline de Detecção de Anomalias
+## Admin de Regras — Interface
+
+```mermaid
+flowchart LR
+    A[Auditor<br/>abre admin web] --> B[Interface HTML<br/>localhost:5001]
+    B --> C{Regra existente?}
+    C -->|Nova| D[Preenche formulario]
+    C -->|Editar| E[Modifica regra]
+    D --> F[Salvar]
+    E --> F
+    F --> G[API Flask<br/>POST /api/regras]
+    G --> H[Atualiza<br/>regras_ativos.json]
+    H --> I[Git commit<br/>automatico]
+    I --> J[Pipeline ConfereAI<br/>lê JSON]
+    J --> K[Testa regras<br/>contra dados]
+    K --> L[Resultado]
+```
+
+## Regras — Tipos de Condição
 
 ```mermaid
 flowchart TD
-    A[Dados Brutos<br/>historico_pagamento_15.csv] --> B{Pré-processamento}
+    A[Criação de Regra] --> B{Selecionar Situação Funcional}
     
-    B --> C[Consolidar rubricas por<br/>isn_vinculo + num_ano + num_mes]
-    C --> D[Remover outliers extremos<br/>IQR 99.5%]
-    D --> E[Divisão Temporal 80/20]
+    B -->|0| B1[Civil Ativo]
+    B -->|2| B2[Civil Afastado c/ ônus]
+    B -->|6| B3[Pensionista]
+    B -->|7| B4[Pensão Alimento]
     
-    E --> F[Dados Treino 80%]
-    E --> G[Dados Teste 20%]
+    B1 --> C{Rubrica CONTÉM?}
+    B2 --> C
+    B3 --> C
+    B4 --> C
     
-    F --> H[Normalizar<br/>StandardScaler]
-    G --> H
+    C -->|VENCIMENTO| D1[ALERTA: rubrica errada]
+    C -->|PROVENTO| D2[ALERTA: provento em ativo?]
+    C -->|PENSAO| D3[OK: pensionista correto]
+    C -->|GRAT TEMPO| D4[ALERTA: gratificacao]
     
-    H --> I[Isolation Forest]
-    H --> J[One-Class SVM]
-    
-    I --> K[Labels: -1=anômalo, 1=normal]
-    J --> K
-    
-    K --> L[Comparar treino vs teste]
-    L --> M{Anomalias no teste<br/>muito maiores?}
-    
-    M -->|Sim| N[Investigar padrões<br/>temporais]
-    M -->|Não| O[Modelo estável]
-    
-    N --> P[Considerar YoY ou<br/>Ajuste CAGR]
+    style D1 fill:#ef5350
+    style D2 fill:#ffa726
+    style D3 fill:#66bb6a
+    style D4 fill:#ef5350
 ```
 
 ## Divisão Temporal 80/20
 
 ```mermaid
 gantt
-    title Divisão Temporal dos Dados
+    title Corte Temporal dos Dados
     dateFormat  YYYY-MM
     axisFormat  %Y
     
     section Treino
-    Dados 2007-2019    :done, t1, 2007-01, 2020-01
+    Dados 2020-01 a 2023-12    :done, t1, 2020-01, 2024-01
     
     section Teste
-    Dados 2020-2024    :active, t2, 2020-01, 2025-01
+    Dados 2024-01 a 2025-01    :active, t2, 2024-01, 2025-01
 ```
 
 ## Comparação de Métodos
 
 ```mermaid
 flowchart LR
-    subgraph Métodos
-        A[Sem Ajuste]
-        B[Com CAGR]
-        C[YoY]
+    subgraph Regras
+        A[FN Payroll Audit<br/>baseado em norma CGU]
     end
     
-    subgraph Anomalias Detectadas
-        A -->|~5%| D[Baseline]
-        B -->|~3%| E[Deflacionado]
-        C -->|~12%| F[Sensível]
+    subgraph ML
+        B[Isolation Forest<br/>estatistico]
+        C[Autoencoder<br/>reconstrução]
+        D[YoY Year-over-Year<br/>mensal]
     end
     
-    subgraph Uso
-        D -->|Uso geral| G[Baseline]
-        E -->|Remover evolução<br/>de longo prazo| H[Anomalias reais]
-        F -->|Capturar variações<br/>mensais| I[Análise fina]
+    subgraph Saída
+        E[Irregularidade<br/>por regra]
+        F[Anomalia<br/>por ML]
+        G[Consolidado]
     end
+    
+    A --> E
+    B --> F
+    C --> F
+    D --> F
+    E --> G
+    F --> G
 ```
 
-## Detecção de Anomalias por Cargo
+## Detecção por Cargo
 
 ```mermaid
 flowchart TD
-    A[Selecionar Cargo<br/>ex: P115] --> B[Dados do Cargo]
+    A[Selecionar Cargo<br/>ex: Z120] --> B[Dados do Cargo]
     
     B --> C{Pivot Table<br/>isn_vinculo × isn_rubrica}
     
     C --> D{Rubricas suficientes?<br/>min 30 registros}
     
     D -->|Não| E[跳过 cargo]
-    D -->|Sim| F[Calcular CAGR por rubrica]
+    D -->|Sim| F[Divisão Temporal 80/20]
     
-    F --> G{Usar método?}
+    F --> G[Dados Treino 80%]
+    F --> H[Dados Teste 20%]
     
-    G -->|CAGR| H[Deflacionar valores<br/>para ano-base]
-    G -->|YoY| I[valor_mês /<br/>valor_mesmo_mês_ano_anterior]
-    G -->|Nenhum| J[Valores originais]
+    G --> I[Filtro Regras<br/>remove irregulares]
+    I --> J[Normalizar YoY<br/>StandardScaler]
     
-    H --> K[Normalizar StandardScaler]
-    I --> K
-    J --> K
+    H --> J
     
-    K --> L[Isolation Forest<br/>contamination=0.05]
-    K --> M[One-Class SVM<br/>nu=0.05]
+    J --> K[Isolation Forest<br/>contamination=0.05]
+    K --> L[Score anomalias]
     
-    L --> N[Score anomalias]
-    M --> N
+    L --> M[Comparar treino vs teste]
+    M --> N{Anomalias no teste<br/>muito maiores?}
     
-    N --> O[Salvar CSV<br/>anomalias_{cargo}.csv]
-    O --> P[Próximo Cargo]
+    N -->|Sim| O[Investigar padrões<br/>temporais]
+    N -->|Não| P[Modelo estável]
 ```
 
-## CAGR — Compound Annual Growth Rate
+## Estrutura de Arquivos
 
 ```mermaid
-flowchart LR
-    A[Valor Inicial<br/>2007] -->|CAGR| B[Valor Final<br/>2024]
+filesystem
     
-    B --> C["CAGR = (VF/VI)^(1/n) - 1"]
+    .confereai/
+    📁 regras/
+    ├── 📄 regras_ativos.json    # Regras ativas (versionado git)
+    ├── 📄 REGRAS.md             # Documentação
+    └── 📁 admin/
+        ├── 📄 app.py            # API Flask (:5001)
+        └── 📁 static/
+            └── 📄 index.html   # Admin web (dark theme)
     
-    D[VI: R$ 545] -->|17 anos| E[VF: R$ 1.590]
-    D -->|CAGR| F[6.5% ao ano]
+    📁 data/
+    ├── 📄 historico_5_seplag.csv
+    ├── 📁 regras_resultados/
+    │   ├── 📄 todas_violacoes.csv
+    │   └── 📄 resumo_regras.json
+    └── 📁 baseline_results_yoy/
     
-    G[VI: R$ 906] -->|17 anos| H[VF: R$ 3.077]
-    G -->|CAGR| I[15.0% ao ano]
-    
-    style F fill:#90EE90
-    style I fill:#FFB6C1
-```
-
-## YoY — Year-over-Year
-
-```mermaid
-sequenceDiagram
-    participant Jan2023
-    participant Jan2022
-    participant Sistema
-    
-    Jan2023->>Sistema: Valor = R$ 150
-    Jan2022->>Sistema: Valor = R$ 140
-    
-    Sistema->>Sistema: YoY = 150/140 = 1.07
-    
-    Note over Sistema: Aumento de 7% em 1 ano<br/>→ Normal (dentro do CAGR)
-    
-    participant Dez2023
-    participant Dez2022
-    participant Sistema2
-    
-    Dez2023->>Sistema2: Valor = R$ 5.000 (com 13º)
-    Dez2022->>Sistema2: Valor = R$ 1.500 (sem 13º)
-    
-    Sistema2->>Sistema2: YoY = 5000/1500 = 3.33
-    
-    Note over Sistema2: Aumento de 233%<br/>→ FALSO POSITIVO (13º)
-```
-
-## Comparação Sem vs Com Ajuste
-
-```mermaid
-flowchart TD
-    subgraph Sem Ajuste
-        A1[Valor 2007: R$ 100] --> A2[Valor 2024: R$ 500]
-        A2 --> A3[Isolation Forest]
-        A3 --> A4[Anomalia detectada<br/>+400% parece suspeito]
-    end
-    
-    subgraph Com CAGR
-        B1[Valor 2007: R$ 100] --> B2[Deflacionado 2024: R$ 100]
-        B2 --> B3[Isolation Forest]
-        B3 --> B4[Normal<br/>sem anomalia]
-    end
-    
-    subgraph Com YoY
-        C1[Jan 2023: R$ 150] --> C2[Jan 2022: R$ 140]
-        C2 --> C3[YoY = 1.07]
-        C3 --> C4[Normal<br/>+7% dentro do esperado]
-    end
-```
-
-## Autoencoder Architecture
-
-```mermaid
-flowchart LR
-    subgraph Encoder
-        A[Input: 15 rubricas] --> B[Dense: 64]
-        B --> C[Dense: 32]
-        C --> D[Latent: 8]
-    end
-    
-    subgraph Decoder
-        D --> E[Dense: 32]
-        E --> F[Dense: 64]
-        F --> G[Output: 15 rubricas]
-    end
-    
-    G --> H[Erro de Reconstrução]
-    H --> I{Erro > threshold?}
-    
-    I -->|Sim| J[ANOMALIA]
-    I -->|Não| K[NORMAL]
+    📁 scripts/
+    ├── 📄 deteccao_regras.py
+    └── 📄 baseline_yoy.py
 ```

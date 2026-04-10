@@ -1,0 +1,26 @@
+{
+  "total_violacoes": 17568,
+  "valor_total_irregular": 159371249.93,
+  "regras": {
+    "R4_Afastado_Vencimento_Indevido": {
+      "quantidade": 109,
+      "valor_total": 773592.57,
+      "viculos_unicos": 5,
+      "rubricas_envolvidas": [
+        "VENCIMENTO/SALARIO/PROVENTO"
+      ],
+      "csv": "data/regras_resultados/violacoes_R4_Afastado_Vencimento_Indevido.csv"
+    },
+    "R5_Civil_Ativo_Provento": {
+      "quantidade": 17459,
+      "valor_total": 158597657.36,
+      "viculos_unicos": 397,
+      "rubricas_envolvidas": [
+        "VENCIMENTO/SALARIO/PROVENTO",
+        "PROVENTO",
+        "RESSARCIMENTO DE PROVENTOS"
+      ],
+      "csv": "data/regras_resultados/violacoes_R5_Civil_Ativo_Provento.csv"
+    }
+  }
+}

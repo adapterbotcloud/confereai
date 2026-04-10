@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin de Regras — ConfereAI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card2: #21253a;
+    --border: #2a2f45;
+    --text: #e0e0e0;
+    --text-dim: #8892b0;
+    --accent: #4fc3f7;
+    --green: #66bb6a;
+    --red: #ef5350;
+    --yellow: #ffca28;
+    --orange: #ffa726;
+    --purple: #ab47bc;
+  }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .logo {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  
+  .logo span { color: var(--text-dim); font-weight: 400; font-size: 14px; }
+  
+  .header-actions { display: flex; gap: 12px; align-items: center; }
+  
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+  
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  
+  /* ── Buttons ── */
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  
+  .btn-primary {
+    background: var(--accent);
+    color: #0f1117;
+  }
+  .btn-primary:hover { background: #81d4fa; }
+  
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-danger:hover { background: #f44336; }
+  
+  .btn-success { background: var(--green); color: #0f1117; }
+  .btn-success:hover { background: #81c784; }
+  
+  .btn-warning { background: var(--yellow); color: #0f1117; }
+  .btn-warning:hover { background: #ffd54f; }
+  
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  
+  .btn-sm { padding: 5px 12px; font-size: 13px; }
+  
+  /* ── Stats ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  
+  .stat-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+  
+  /* ── Table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+  
+  td {
+    padding: 12px 14px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  
+  tr:last-child td { border-bottom: none; }
+  
+  tr:hover td { background: var(--card2); }
+  
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  
+  .badge-ativa { background: rgba(102,187,106,0.2); color: var(--green); }
+  .badge-inativa { background: rgba(255,255,255,0.08); color: var(--text-dim); }
+  
+  .badge-alta { background: rgba(239,83,80,0.2); color: var(--red); }
+  .badge-media { background: rgba(255,167,38,0.2); color: var(--orange); }
+  .badge-baixa { background: rgba(255,202,40,0.2); color: var(--yellow); }
+  
+  .actions { display: flex; gap: 8px; }
+  
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .modal-overlay.active { display: flex; }
+  
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 600px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .modal h2 {
+    font-size: 20px;
+    margin-bottom: 24px;
+    color: var(--accent);
+  }
+  
+  .form-group {
+    margin-bottom: 16px;
+  }
+  
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  
+  /* ── Test Results ── */
+  .resultado {
+    display: none;
+    margin-top: 20px;
+  }
+  
+  .resultado.active { display: block; }
+  
+  .resultado-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .resultado-num {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--red);
+  }
+  
+  .tabela-resultado { margin-top: 16px; }
+  
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 14px;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+  .toast.show { opacity: 1; }
+  .toast.ok { border-left: 4px solid var(--green); }
+  .toast.erro { border-left: 4px solid var(--red); }
+  
+  .situacao-info {
+    background: rgba(79,195,247,0.1);
+    border: 1px solid rgba(79,195,247,0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+  }
+  
+  .situacao-info code {
+    background: var(--card2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent);
+    font-size: 12px;
+  }
+  
+  .loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🐐 ConfereAI <span>/ Admin de Regras</span></div>
+  <div class="header-actions">
+    <button class="btn btn-outline btn-sm" onclick="validarRegras()">✓ Validar</button>
+    <button class="btn btn-success btn-sm" onclick="testarRegras()">▶ Testar Regras</button>
+    <button class="btn btn-primary" onclick="abrirModalNova()">+ Nova Regra</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Resumo -->
+  <div class="stats" id="stats">
+    <div class="stat">
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-label">Regras Cadastradas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-ativas">—</div>
+      <div class="stat-label">Regras Ativas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-violacoes">—</div>
+      <div class="stat-label">Vínculos Violados</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-valor">—</div>
+      <div class="stat-label">Valor Irregular (R$)</div>
+    </div>
+  </div>
+
+  <!-- Legenda -->
+  <div class="situacao-info">
+    <strong>Situação Funcional:</strong>
+    <code>0</code> Civil Ativo ·
+    <code>2</code> Civil Afastado c/ ônus ·
+    <code>6</code> Pensionista ·
+    <code>7</code> Pensão Alimento ·
+    <code>8</code> Liminar
+  </div>
+
+  <!-- Tabela de Regras -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Regras de Auditoria</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Situação</th>
+          <th>Severidade</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-regras">
+        <tr><td colspan="6" style="text-align:center; padding:32px"><div class="loading"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Resultado do Teste -->
+  <div class="resultado" id="resultado">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Resultado do Teste</div>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('resultado').classList.remove('active')">✕ Fechar</button>
+      </div>
+      <div class="resultado-header">
+        <div class="resultado-num" id="res-total">0</div>
+        <div>
+          <div style="font-size:16px; font-weight:600">Vínculos com violações</div>
+          <div style="color:var(--text-dim); font-size:14px">Valor total: R$ <span id="res-valor">0</span></div>
+        </div>
+      </div>
+      <div id="res-por-regra"></div>
+      <div class="tabela-resultado">
+        <table>
+          <thead>
+            <tr>
+              <th>Vínculo</th>
+              <th>Rubrica</th>
+              <th>Situação</th>
+              <th>Qtd</th>
+              <th>Valor Total</th>
+              <th>Regra</th>
+            </tr>
+          </thead>
+          <tbody id="res-detalhes"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal Nova/Editar Regra -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2 id="modal-titulo">Nova Regra</h2>
+    
+    <div class="form-group">
+      <label>Nome da Regra *</label>
+      <input type="text" id="f-nome" placeholder="ex: Pensionista nao pode receber VENCIMENTO">
+    </div>
+    
+    <div class="form-group">
+      <label>Descrição</label>
+      <textarea id="f-descricao" rows="2" placeholder="explica a regra..."></textarea>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label>Situação Funcional *</label>
+        <select id="f-situacao" multiple size="4">
+          <option value="0">Civil Ativo</option>
+          <option value="1">Militar Ativo</option>
+          <option value="2">Civil Afastado c/ ônus</option>
+          <option value="3">Militar Afastado c/ ônus</option>
+          <option value="4">Civil Afastado</option>
+          <option value="5">Militar Afastado</option>
+          <option value="6">Pensionista</option>
+          <option value="7">Pensão Alimento</option>
+          <option value="8">Liminar</option>
+        </select>
+        <small style="color:var(--text-dim)">Segure Ctrl/Cmd para selecionar múltiplos</small>
+      </div>
+      
+      <div class="form-group">
+        <label>Severidade</label>
+        <select id="f-severidade">
+          <option value="ALTA">ALTA</option>
+          <option value="MEDIA">MÉDIA</option>
+          <option value="BAIXA">BAIXA</option>
+        </select>
+        
+        <label style="margin-top:12px">Status</label>
+        <select id="f-status">
+          <option value="ativa">Ativa</option>
+          <option value="inativa">Inativa</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label>Rubrica CONTÉM (pelo menos um) — deixe vazio para qualquer</label>
+      <input type="text" id="f-contem" placeholder="ex: VENCIMENTO, PROVENTO (separados por vírgula)">
+    </div>
+    
+    <div class="form-group">
+      <label>Rubrica NÃO CONTÉM (NONE desses) — deixe vazio se não aplicável</label>
+      <input type="text" id="f-nao-contem" placeholder="ex: PENSAO">
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label>Ação</label>
+        <select id="f-acao">
+          <option value="ALERTA">ALERTA</option>
+          <option value="BLOQUEAR">BLOQUEAR</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarRegra()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/regras';
+let regras = [];
+let editando = null;
+
+// ─── Carregar Regras ─────────────────────────────────────────────────────────
+async function carregarRegras() {
+  const res = await fetch(API);
+  const data = await res.json();
+  regras = data.regras || [];
+  renderizarTabela();
+  atualizarStats();
+}
+
+// ─── Renderizar ───────────────────────────────────────────────────────────────
+function renderizarTabela() {
+  const tbody = document.getElementById('tabela-regras');
+  
+  if (!regras.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--text-dim)">Nenhuma regra cadastrada</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = regras.map(r => `
+    <tr>
+      <td><code style="background:var(--card2); padding:3px 8px; border-radius:4px; font-size:13px">${r.id}</code></td>
+      <td>
+        <div style="font-weight:500">${r.nome}</div>
+        <div style="font-size:12px; color:var(--text-dim); margin-top:2px">${r.descricao || ''}</div>
+      </td>
+      <td><code style="font-size:12px">${(r.situacao_funcional||[]).join(', ')}</code></td>
+      <td><span class="badge badge-${r.severidade.toLowerCase()}">${r.severidade}</span></td>
+      <td><span class="badge badge-${r.status}">${r.status}</span></td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-outline btn-sm" onclick="editarRegra('${r.id}')">✎</button>
+          <button class="btn btn-outline btn-sm" onclick="toggleStatus('${r.id}')">⏻</button>
+          <button class="btn btn-danger btn-sm" onclick="removerRegra('${r.id}')">✕</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function atualizarStats() {
+  document.getElementById('stat-total').textContent = regras.length;
+  document.getElementById('stat-ativas').textContent = regras.filter(r => r.status === 'ativa').length;
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+function abrirModalNova() {
+  editando = null;
+  document.getElementById('modal-titulo').textContent = 'Nova Regra';
+  document.getElementById('f-nome').value = '';
+  document.getElementById('f-descricao').value = '';
+  document.getElementById('f-situacao').selectedOptions.length = 0;
+  document.getElementById('f-contem').value = '';
+  document.getElementById('f-nao-contem').value = '';
+  document.getElementById('f-severidade').value = 'MEDIA';
+  document.getElementById('f-acao').value = 'ALERTA';
+  document.getElementById('f-status').value = 'ativa';
+  document.getElementById('modal').classList.add('active');
+}
+
+function editarRegra(id) {
+  const r = regras.find(x => x.id === id);
+  if (!r) return;
+  editando = id;
+  
+  document.getElementById('modal-titulo').textContent = `Editar Regra ${id}`;
+  document.getElementById('f-nome').value = r.nome || '';
+  document.getElementById('f-descricao').value = r.descricao || '';
+  
+  // Multi-select situação
+  const sel = document.getElementById('f-situacao');
+  sel.selectedOptions.length = 0;
+  (r.situacao_funcional || []).forEach(s => {
+    [...sel.options].find(o => o.value === s).selected = true;
+  });
+  
+  document.getElementById('f-contem').value = (r.rubrica_contem || []).join(', ');
+  document.getElementById('f-nao-contem').value = (r.rubrica_nao_contem || []).join(', ');
+  document.getElementById('f-severidade').value = r.severidade || 'MEDIA';
+  document.getElementById('f-acao').value = r.acao || 'ALERTA';
+  document.getElementById('f-status').value = r.status || 'ativa';
+  
+  document.getElementById('modal').classList.add('active');
+}
+
+function fecharModal() {
+  document.getElementById('modal').classList.remove('active');
+  editando = null;
+}
+
+// ─── CRUD ─────────────────────────────────────────────────────────────────────
+async function salvarRegra() {
+  const nome = document.getElementById('f-nome').value.trim();
+  if (!nome) { toast('Nome é obrigatório', 'erro'); return; }
+  
+  const situacoesSel = [...document.getElementById('f-situacao').selectedOptions].map(o => o.value);
+  const contem = document.getElementById('f-contem').value.split(',').map(s => s.trim()).filter(Boolean);
+  const naoContem = document.getElementById('f-nao-contem').value.split(',').map(s => s.trim()).filter(Boolean);
+  
+  const payload = {
+    nome,
+    descricao: document.getElementById('f-descricao').value.trim(),
+    situacao_funcional: situacoesSel,
+    rubrica_contem: contem,
+    rubrica_nao_contem: naoContem,
+    severidade: document.getElementById('f-severidade').value,
+    acao: document.getElementById('f-acao').value,
+    status: document.getElementById('f-status').value,
+  };
+  
+  let res;
+  if (editando) {
+    res = await fetch(`${API}/${editando}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  } else {
+    res = await fetch(API, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  }
+  
+  if (res.ok) {
+    toast(editando ? 'Regra atualizada!' : 'Regra criada!', 'ok');
+    fecharModal();
+    carregarRegras();
+  } else {
+    toast('Erro ao salvar', 'erro');
+  }
+}
+
+async function removerRegra(id) {
+  if (!confirm(`Remover regra ${id}?`)) return;
+  const res = await fetch(`${API}/${id}`, { method: 'DELETE' });
+  if (res.ok) {
+    toast('Regra removida', 'ok');
+    carregarRegras();
+  } else {
+    toast('Erro ao remover', 'erro');
+  }
+}
+
+async function toggleStatus(id) {
+  const r = regras.find(x => x.id === id);
+  if (!r) return;
+  const novo = { ...r, status: r.status === 'ativa' ? 'inativa' : 'ativa' };
+  const res = await fetch(`${API}/${id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(novo) });
+  if (res.ok) {
+    toast(`Regra ${novo.status}`, 'ok');
+    carregarRegras();
+  }
+}
+
+// ─── Testar ───────────────────────────────────────────────────────────────────
+async function testarRegras() {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="loading"></div>';
+  
+  const res = await fetch(`${API}/testar`, { method: 'POST' });
+  const data = await res.json();
+  
+  btn.disabled = false;
+  btn.innerHTML = '▶ Testar Regras';
+  
+  if (!data.ok) { toast('Erro ao testar regras', 'erro'); return; }
+  
+  // Atualizar stats
+  document.getElementById('stat-violacoes').textContent = data.total_vinculos;
+  document.getElementById('stat-valor').textContent = data.total_vinculos > 0 
+    ? formatarMoeda(data.valor_total) 
+    : '—';
+  
+  // Mostrar resultado
+  document.getElementById('res-total').textContent = data.total_vinculos;
+  document.getElementById('res-valor').textContent = formatarMoeda(data.valor_total);
+  
+  // Por regra
+  const porRegra = document.getElementById('res-por-regra');
+  if (data.por_regra && data.por_regra.length) {
+    porRegra.innerHTML = data.por_regra.map(r => `
+      <span class="badge badge-alta" style="margin:4px">${r.regra_nome}: ${r.qtd} violações (R$ ${formatarMoeda(r.vlr_total)})</span>
+    `).join('');
+  } else {
+    porRegra.innerHTML = '<span style="color:var(--green)">✅ Nenhuma violação encontrada</span>';
+  }
+  
+  // Detalhes
+  const detalhes = document.getElementById('res-detalhes');
+  detalhes.innerHTML = (data.detalhes || []).map(d => `
+    <tr>
+      <td><code>${d.isn_vinculo}</code></td>
+      <td>${d.dsc_rubrica}</td>
+      <td>${d.dsc_situacao}</td>
+      <td>${d.qtd}</td>
+      <td>R$ ${formatarMoeda(d.vlr_total)}</td>
+      <td><code>${d.regra_id}</code></td>
+    </tr>
+  `).join('');
+  
+  document.getElementById('resultado').classList.add('active');
+}
+
+// ─── Validar ──────────────────────────────────────────────────────────────────
+async function validarRegras() {
+  const res = await fetch(`${API}/validar`);
+  const data = await res.json();
+  if (data.valido) {
+    toast('✅ Estrutura das regras válida!', 'ok');
+  } else {
+    toast('❌ Erros: ' + data.erros.join(', '), 'erro');
+  }
+}
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+function formatarMoeda(v) {
+  return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function toast(msg, tipo = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+carregarRegras();
+</script>
+</body>
+</html>
