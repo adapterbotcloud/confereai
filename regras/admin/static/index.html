@@ -1227,15 +1227,44 @@ function voltarFormML() {
   var cargoValor = (document.getElementById('ml-cargo-select') || {}).value || 'P115';
   var cargos = window._cargos || [];
   var sorted = [...cargos].sort(function(a,b){ return b.n_registros - a.n_registros; });
-  // Repoe apenas o card-ml-detalhe
-  var card = document.getElementById('card-ml-detalhe');
-  if (card) {
-    card.style.display = 'block';
-    var t = document.getElementById('ml-cargo-titulo'); if (t) t.textContent = 'Selecione um cargo';
-    var pt = document.getElementById('ml-pct-treino'); if (pt) pt.textContent = '—';
-    var ps = document.getElementById('ml-pct-teste'); if (ps) ps.textContent = '—';
-    var pr = document.getElementById('ml-n-rubricas'); if (pr) pr.textContent = '—';
-  }
+
+  // Reconstroi o HTML original completo do tab-ml (pq mostrarResultadoML apagou tudo)
+  var nCargos = cargos.length;
+  var formHtml =
+    '<div class="stats" id="stats-ml">' +
+      '<div class="stat"><div class="stat-value" id="ml-cargos">' + nCargos + '</div><div class="stat-label">Cargos Analisados</div></div>' +
+      '<div class="stat"><div class="stat-value">3</div><div class="stat-label">Metodos ML</div></div>' +
+      '<div class="stat"><div class="stat-value" id="ml-anomalias-treino">—</div><div class="stat-label">% Anomalias Treino</div></div>' +
+      '<div class="stat"><div class="stat-value" id="ml-anomalias-teste">—</div><div class="stat-label">% Anomalias Teste</div></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="card-header"><div class="card-title">Selecionar Cargo</div></div>' +
+      '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
+        '<select id="ml-cargo-select" onchange="carregarML()" style="flex:1;min-width:200px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px"></select>' +
+        '<select id="ml-metodo-select" onchange="carregarML()" style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px">' +
+          '<option value="yoy">YoY (Year-over-Year)</option><option value="ajustado">CAGR Ajustado</option><option value="temporal">Sem Ajuste</option>' +
+        '</select>' +
+        '<button class="btn btn-primary" onclick="rodarML()">▶ Rodar ML</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card" id="card-comparacao" style="display:none">' +
+      '<div class="card-header"><div class="card-title">Comparacao de Metodos — <span id="comp-cargo"></span></div></div>' +
+      '<table><thead><tr><th>Metodo</th><th>% Anomalias Teste</th><th>Score Medio</th><th></th></tr></thead><tbody id="comp-table"></tbody></table>' +
+    '</div>' +
+    '<div class="card" id="card-ml-detalhe" style="display:none">' +
+      '<div class="card-header"><div class="card-title">Analise ML — <span id="ml-cargo-titulo"></span></div></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
+        '<div style="background:var(--card2);border-radius:8px;padding:16px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--accent)" id="ml-pct-treino">—</div><div style="font-size:13px;color:var(--text-dim)">% Anomalias Treino</div></div>' +
+        '<div style="background:var(--card2);border-radius:8px;padding:16px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--red)" id="ml-pct-teste">—</div><div style="font-size:13px;color:var(--text-dim)">% Anomalias Teste</div></div>' +
+      '</div>' +
+      '<div style="font-size:13px;color:var(--text-dim);margin-bottom:12px">📊 <span id="ml-n-rubricas"></span> rubricas | Treino: <span id="ml-n-treino"></span> | Teste: <span id="ml-n-teste"></span></div>' +
+      '<div class="card-title" style="margin-bottom:8px">Vinculos Mais Anomalos (Top 20 no Teste)</div>' +
+      '<div style="overflow-x:auto"><table><thead><tr><th>Vinculo</th><th>Qtd Meses Anomalo</th><th>Score Medio</th></tr></thead><tbody id="ml-table-body"></tbody></table></div>' +
+    '</div>';
+
+  document.getElementById('tab-ml').innerHTML = formHtml;
+
+  // Repoe dropdown de cargos
   var selCargo = document.getElementById('ml-cargo-select');
   if (selCargo && cargos.length) {
     selCargo.innerHTML = sorted.map(function(c) {
