@@ -1112,6 +1112,7 @@ async function rodarMLComMetodo(method) {
 }
 
 async function rodarMLBeto(cargo, method) {
+  console.log('[rodarMLBeto] INICIANDO - cargo:', cargo, 'method:', method);
   // Carrega comparacao em paralelo
   fetch('/api/ml/comparar?cargo=' + encodeURIComponent(cargo))
     .then(function(r) { return r.json(); })
@@ -1139,6 +1140,7 @@ async function rodarMLBeto(cargo, method) {
     body: JSON.stringify({method: method || 'yoy', cargo: cargo})
   });
   var data = await res.json();
+  console.log('[rodarMLBeto] resposta:', JSON.stringify(data).slice(0,200));
 
   if (data.status === 'done') {
     mostrarResultadoML(data.data);
