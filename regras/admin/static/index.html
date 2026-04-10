@@ -1065,38 +1065,50 @@ function carregarCargosML() {
 
 async function carregarML() {
   showTab('ml');
-  const cargo = document.getElementById('ml-cargo-select').value;
-  const method = document.getElementById('ml-metodo-select').value;
+  var cargoSel = document.getElementById('ml-cargo-select');
+  if (!cargoSel) { alert('Dropdown de cargo não encontrado.'); return; }
+  var cargo = cargoSel.value;
+  var method = (document.getElementById('ml-metodo-select') || {}).value || 'yoy';
   if (!cargo) return;
 
-  // Comparar métodos (cache CSV)
-  fetch(`/api/ml/comparar?cargo=${cargo}`)
-    .then(r => r.json())
-    .then(d => {
-      if (!d.methods || !d.methods.length) return;
-      document.getElementById('comp-cargo').textContent = d.cargo;
-      document.getElementById('comp-table').innerHTML = d.methods.map(m => `
-        <tr>
-          <td>${m.label}</td>
-          <td><strong style="color:${m.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)'}">${m.pct_anomalias_teste}%</strong></td>
-          <td>${m.score_medio}</td>
-          <td><button class="btn btn-outline btn-sm" onclick="document.getElementById('ml-metodo-select').value='${m.method}'">Ver</button></td>
-        </tr>
-      `).join('');
-      document.getElementById('card-comparacao').style.display = 'block';
-    });
+  // Mostra estado de carregamento usando o card original (se existir no DOM)
+  var cardDetalhe = document.getElementById('card-ml-detalhe');
+  if (cardDetalhe) {
+    cardDetalhe.style.display = 'block';
+    var titulo = document.getElementById('ml-cargo-titulo');
+    if (titulo) titulo.textContent = cargo + ' / ' + method;
+    var pTreino = document.getElementById('ml-pct-treino');
+    if (pTreino) pTreino.textContent = '...';
+    var pTeste = document.getElementById('ml-pct-teste');
+    if (pTeste) pTeste.textContent = '...';
+  }
 
-  // Tentar carregar do cache ML em tempo real
-  const res = await fetch(`/api/ml/carregar_cache?cargo=${cargo}&method=${method}`);
-  const data = await res.json();
-  
+  // Carrega comparacao de metodos
+  fetch('/api/ml/comparar?cargo=' + encodeURIComponent(cargo))
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.methods || !d.methods.length) return;
+      var compCard = document.getElementById('card-comparacao');
+      var compCargo = document.getElementById('comp-cargo');
+      var compTable = document.getElementById('comp-table');
+      if (compCard) compCard.style.display = 'block';
+      if (compCargo) compCargo.textContent = d.cargo;
+      if (compTable) {
+        compTable.innerHTML = d.methods.map(function(m) {
+          return '<tr><td>' + m.label + '</td><td><strong style="color:' + (m.pct_anomalias_teste > 5 ? 'var(--red)' : 'var(--green)') + '">' + m.pct_anomalias_teste + '%</strong></td><td>' + m.score_medio + '</td><td><button class="btn btn-outline btn-sm" onclick="document.getElementById(\'ml-metodo-select\').value=\'' + m.method + '\'; carregarML();">Ver</button></td></tr>';
+        }).join('');
+      }
+    }).catch(function(e) { console.error('[comparar] erro:', e); });
+
+  // Tentar carregar do cache
+  var res = await fetch('/api/ml/carregar_cache?cargo=' + encodeURIComponent(cargo) + '&method=' + encodeURIComponent(method));
+  var data = await res.json();
   if (data.source === 'cache' && data.data) {
     mostrarResultadoML(data.data);
-    toast('✅ Carregado do cache', 'ok');
   } else if (data.status === 'running') {
-    toast('⏳ Computando ML em tempo real... (aguarde)', 'ok');
     await pollJob(data.job_id, cargo, method, document.getElementById('btn-rodar-ml'));
   }
+  // else: sem cache, usa estado carregamento padrao do card original
 }
 
 async function rodarML() {
