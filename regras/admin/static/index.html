@@ -624,10 +624,10 @@ async function initApp() {
         <div class="card-title">Selecionar Cargo</div>
       </div>
       <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-        <select id="ml-cargo-select" onchange="carregarML()" style="flex:1; min-width:200px; padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px;">
+        <select id="ml-cargo-select" onchange="carregarML(false)" style="flex:1; min-width:200px; padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px;">
           <option value="">Carregando...</option>
         </select>
-        <select id="ml-metodo-select" onchange="carregarML()" style="padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px;">
+        <select id="ml-metodo-select" onchange="carregarML(false)" style="padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px;">
           <option value="yoy">YoY (Year-over-Year)</option>
           <option value="ajustado">CAGR Ajustado</option>
           <option value="temporal">Sem Ajuste</option>
@@ -1063,9 +1063,10 @@ function carregarCargosML() {
     });
 }
 
-async function carregarML() {
-  if (window._restoringML) { console.log('[carregarML] skipped: _restoringML=true'); return; }
+async function carregarML(skipCheck) {
+  if (skipCheck !== true && window._restoringML) { console.log('[carregarML] skipped: _restoringML=true'); return; }
   var cargoSel = document.getElementById('ml-cargo-select');
+  if (cargoSel && cargoSel.value) window._lastCargo = cargoSel.value;
   if (!cargoSel) { alert('Dropdown de cargo não encontrado.'); return; }
   var cargo = cargoSel.value;
   var method = (document.getElementById('ml-metodo-select') || {}).value || 'yoy';
@@ -1114,7 +1115,8 @@ async function carregarML() {
 async function rodarML() {
   console.log('[rodarML] chamado');
   showTab('ml');
-  const cargo = document.getElementById('ml-cargo-select')?.value || 'P115';
+  var cargo = document.getElementById('ml-cargo-select')?.value || 'P115';
+  window._lastCargo = cargo;
   const method = document.getElementById('ml-metodo-select')?.value || 'yoy';
 
   // Carrega comparacao em paralelo
@@ -1225,7 +1227,8 @@ function mostrarResultadoML(r) {
 
 function voltarFormML() {
   showTab('ml');
-  var cargoValor = (document.getElementById('ml-cargo-select') || {}).value || 'P115';
+  var cargoValor = window._lastCargo || (document.getElementById('ml-cargo-select') || {}).value || 'P115';
+  console.log('[voltarFormML] cargoValor:', cargoValor);
   var cargos = window._cargos || [];
   var sorted = [...cargos].sort(function(a,b){ return b.n_registros - a.n_registros; });
 
@@ -1241,8 +1244,8 @@ function voltarFormML() {
     '<div class="card">' +
       '<div class="card-header"><div class="card-title">Selecionar Cargo</div></div>' +
       '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
-        '<select id="ml-cargo-select" onchange="carregarML()" style="flex:1;min-width:200px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px"></select>' +
-        '<select id="ml-metodo-select" onchange="carregarML()" style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px">' +
+        '<select id="ml-cargo-select" onchange="carregarML(false)" style="flex:1;min-width:200px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px"></select>' +
+        '<select id="ml-metodo-select" onchange="carregarML(false)" style="padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px">' +
           '<option value="yoy">YoY (Year-over-Year)</option><option value="ajustado">CAGR Ajustado</option><option value="temporal">Sem Ajuste</option>' +
         '</select>' +
         '<button class="btn btn-primary" onclick="rodarML()">▶ Rodar ML</button>' +
