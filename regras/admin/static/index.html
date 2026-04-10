@@ -1058,6 +1058,12 @@ function carregarCargosML() {
       var mlCargos = document.getElementById('ml-cargos');
       if (mlCargos) mlCargos.textContent = d.cargos.length;
       console.log('[ML] cargos atualizados:', d.cargos.length);
+      // Auto-roda ML pro primeiro cargo na primeira vez que entra na aba
+      if (!window._autoRanML) {
+        window._autoRanML = true;
+        console.log('[ML] auto-rodando ML para primeiro cargo...');
+        setTimeout(function() { rodarML(); }, 100);
+      }
     }).catch(function(e) { console.error('[ML] erro ao carregar cargos:', e.message); });
 }
 
