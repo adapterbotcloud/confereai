@@ -1047,20 +1047,37 @@ function showTab(name) {
 
 // ─── ML ─────────────────────────────────────────────────────────────────────
 function carregarCargosML() {
-  console.log('[ML] carregarCargosML chamado, token:', getToken().slice(0,20));
+  console.log('[ML] carregarCargosML chamado');
+  // Se window._cargos ja existe, repopula immediately (sem esperar fetch)
+  if (window._cargos && window._cargos.length) {
+    var sel = document.getElementById('ml-cargo-select');
+    if (sel) {
+      var sorted = [...window._cargos].sort(function(a,b){ return b.n_registros - a.n_registros; });
+      sel.innerHTML = sorted.map(function(c) {
+        return '<option value="' + c.cargo + '">' + c.cargo + ' (' + c.n_registros.toLocaleString('pt-BR') + ' reg)</option>';
+      }).join('');
+      var mlCargos = document.getElementById('ml-cargos');
+      if (mlCargos) mlCargos.textContent = window._cargos.length;
+      console.log('[ML] dropdown repovoada de window._cargos:', window._cargos.length);
+    }
+  }
+  // Agora busca frescos do servidor
   fetch('/api/ml/cargos')
     .then(function(r) { console.log('[ML] /api/ml/cargos status:', r.status); return r.json(); })
-    .then(function(d) { console.log('[ML] cargos recebidos:', d.cargos ? d.cargos.length : 'ERRO', d);
-      const sel = document.getElementById('ml-cargo-select');
-      // Ordena por n_registros desc (maior primero)
+    .then(function(d) {
+      if (!d.cargos || !d.cargos.length) { console.warn('[ML] API retornou sem cargos'); return; }
       window._cargos = d.cargos;
-      const sorted = [...d.cargos].sort((a,b) => b.n_registros - a.n_registros);
-      sel.innerHTML = sorted.map(c => 
-        `<option value="${c.cargo}">${c.cargo} (${c.n_registros.toLocaleString('pt-BR')} reg)</option>`
-      ).join('');
-      document.getElementById('ml-cargos').textContent = d.cargos.length;
-      // Card ja visivel por padrao, placeholder ja existe no HTML
-    });
+      var sel = document.getElementById('ml-cargo-select');
+      if (sel) {
+        var sorted = [...d.cargos].sort(function(a,b){ return b.n_registros - a.n_registros; });
+        sel.innerHTML = sorted.map(function(c) {
+          return '<option value="' + c.cargo + '">' + c.cargo + ' (' + c.n_registros.toLocaleString('pt-BR') + ' reg)</option>';
+        }).join('');
+      }
+      var mlCargos = document.getElementById('ml-cargos');
+      if (mlCargos) mlCargos.textContent = d.cargos.length;
+      console.log('[ML] cargos atualizados:', d.cargos.length);
+    }).catch(function(e) { console.error('[ML] erro ao carregar cargos:', e.message); });
 }
 
 async function carregarML(skipCheck) {
