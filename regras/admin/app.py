@@ -92,7 +92,7 @@ def salvar_regras(data):
 # ─── Rotas Estaticas ───────────────────────────────────────────────────────────
 @app.get("/")
 async def index():
-    return FileResponse("static/index.html")
+    return FileResponse(Path(__file__).parent / "static" / "index.html")
 
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────
