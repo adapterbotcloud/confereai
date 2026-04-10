@@ -1073,13 +1073,7 @@ async function carregarML(skipCheck) {
   if (!cargo) return;
 
   // Mostra estado de carregamento usando o card original (se existir no DOM)
-  // Mostra placeholder de carregamento
-  var cardDetalhe = document.getElementById('card-ml-detalhe');
-  if (cardDetalhe) {
-    var titulo = document.getElementById('ml-cargo-titulo');
-    if (titulo) titulo.textContent = (cargo + ' / ' + method) + ' — carregando...';
-    cardDetalhe.innerHTML = '<div class="card-header"><div class="card-title">Analise ML — ' + cargo + ' / ' + method + '</div></div><div style="padding:24px;text-align:center;color:var(--text-dim)"><div style="font-size:20px;margin-bottom:8px">Processando...</div><div style="font-size:13px">Isolation Forest em execucao</div></div>';
-  }
+  // Nao faz nada no card - usuario que clica em Rodar ML
 
   // Carrega comparacao de metodos
   fetch('/api/ml/comparar?cargo=' + encodeURIComponent(cargo))
