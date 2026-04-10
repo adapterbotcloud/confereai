@@ -983,25 +983,30 @@ function toast(msg, tipo = 'ok') {
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 function showTab(name) {
-  console.log('[showTab] name:', name);
+  window._activeTab = name;
   document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); c.style.display = 'none'; });
+  var tabs = document.querySelectorAll('.tab-content');
+  tabs.forEach(function(t) {
+    t.style.display = 'none';
+    t.classList.remove('active');
+  });
   var target = document.getElementById('tab-' + name);
+  if (!target) return;
   target.classList.add('active');
   target.style.display = 'block';
-  if (event && event.target) event.target.classList.add('active');
+  if (event && event.target && event.target.classList.contains('tab-btn')) {
+    event.target.classList.add('active');
+  }
   
   if (name === 'ml') {
-    console.log('[showTab] entrando ML, mlLoaded:', window.mlLoaded);
+    document.getElementById('btn-rodar-ml').style.display = 'inline-block';
     ['btn-validar','btn-testar','btn-novaregra'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
-    document.getElementById('btn-rodar-ml').style.display = 'inline-block';
-    if (!window.mlLoaded) { 
-      console.log('[showTab] chamando carregarCargosML');
-      carregarCargosML(); 
-      window.mlLoaded = true; 
+    if (!window.mlLoaded) {
+      carregarCargosML();
+      window.mlLoaded = true;
     }
   } else {
     ['btn-validar','btn-testar','btn-novaregra'].forEach(function(id) {
