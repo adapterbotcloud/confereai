@@ -1143,44 +1143,41 @@ async function pollJob(jobId, cargo, method, btn) {
 }
 
 function mostrarResultadoML(r) {
-  console.log('[mostrarResultadoML] INICIO', r.cargo);
   var pct = r.pct_anomalias_teste;
   var pctColor = pct > 5 ? '#ef5350' : '#66bb6a';
+  var top = (r.top_vinculos_anomalos || []).slice(0, 8);
   var topRows = '';
-  var top = r.top_vinculos_anomalos || [];
   if (top.length > 0) {
     top.forEach(function(v) {
-      topRows += '<tr><td style="padding:8px; font-family:monospace">' + v.isn_vinculo + '</td><td style="padding:8px">' + v.qtd_meses + '</td><td style="padding:8px; color:#ef5350">' + v.score_medio.toFixed(4) + '</td></tr>';
+      topRows += '<tr><td style="padding:4px 6px;font-family:monospace;font-size:12px">' + v.isn_vinculo + '</td><td style="padding:4px 6px;font-size:12px;text-align:center">' + v.qtd_meses + '</td><td style="padding:4px 6px;font-size:12px;color:#ef5350;text-align:right">' + v.score_medio.toFixed(4) + '</td></tr>';
     });
   } else {
-    topRows = '<tr><td colspan="3" style="text-align:center;padding:32px;color:#66bb6a;font-size:16px">✅ Nenhuma anomalia detectada</td></tr>';
+    topRows = '<tr><td colspan="3" style="padding:16px;text-align:center;color:#66bb6a;font-size:13px">✅ Nenhuma anomalia detectada</td></tr>';
   }
-  var html = '<div style="background:#1a2a3a;border:2px solid #4fc3f7;border-radius:12px;padding:24px;margin-top:16px">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
-      '<div style="font-size:20px;font-weight:700;color:#4fc3f7">Análise ML — ' + r.cargo + ' / ' + r.method + '</div>' +
-      '<button onclick="voltarFormML()" style="background:#21253a;color:#e0e0e0;border:1px solid #2a2f45;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px">← Voltar</button>' +
+  var totalAnomalias = r.top_vinculos_anomalos ? r.top_vinculos_anomalos.length : 0;
+  var html = '<div style="background:#1a2a3a;border:2px solid #4fc3f7;border-radius:8px;padding:12px;margin-top:8px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+      '<div style="font-size:14px;font-weight:700;color:#4fc3f7">Análise ML — ' + r.cargo + ' / ' + r.method + '</div>' +
+      '<button onclick="voltarFormML()" style="background:#21253a;color:#e0e0e0;border:1px solid #2a2f45;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px">← Voltar</button>' +
     '</div>' +
-    '<div style="font-size:13px;color:#8892b0;margin-bottom:16px">Treino: ' + (r.periodo_treino || '-') + ' | Teste: ' + (r.periodo_teste || '-') + '</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">' +
-      '<div style="background:#21253a;padding:16px;border-radius:8px;text-align:center">' +
-        '<div style="font-size:28px;font-weight:700;color:#4fc3f7">' + r.pct_anomalias_treino + '%</div>' +
-        '<div style="font-size:12px;color:#8892b0">Anomalias Treino</div></div>' +
-      '<div style="background:#21253a;padding:16px;border-radius:8px;text-align:center">' +
-        '<div style="font-size:28px;font-weight:700;color:' + pctColor + '">' + pct + '%</div>' +
-        '<div style="font-size:12px;color:#8892b0">Anomalias Teste</div></div></div>' +
-    '<div style="font-size:13px;color:#8892b0;margin-bottom:16px">' + r.n_rubricas + ' rubricas | Treino: ' + r.n_treino + ' | Teste: ' + r.n_teste + '</div>' +
+    '<div style="font-size:11px;color:#8892b0;margin-bottom:8px">Treino: ' + (r.periodo_treino || '-') + ' &nbsp;|&nbsp; Teste: ' + (r.periodo_teste || '-') + '</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:8px">' +
+      '<div style="flex:1;background:#21253a;padding:8px;border-radius:6px;text-align:center">' +
+        '<div style="font-size:18px;font-weight:700;color:#4fc3f7">' + r.pct_anomalias_treino + '%</div>' +
+        '<div style="font-size:10px;color:#8892b0">Treino</div></div>' +
+      '<div style="flex:1;background:#21253a;padding:8px;border-radius:6px;text-align:center">' +
+        '<div style="font-size:18px;font-weight:700;color:' + pctColor + '">' + pct + '%</div>' +
+        '<div style="font-size:10px;color:#8892b0">Teste</div></div>' +
+      '<div style="flex:1;background:#21253a;padding:8px;border-radius:6px;text-align:center">' +
+        '<div style="font-size:18px;font-weight:700;color:#e0e0e0">' + r.n_rubricas + '</div>' +
+        '<div style="font-size:10px;color:#8892b0">Rubricas</div></div></div>' +
+    '<div style="font-size:10px;color:#8892b0;margin-bottom:4px">Top ' + top.length + ' anomalias (de ' + totalAnomalias + ' total) — Treino ' + r.n_treino + ' | Teste ' + r.n_teste + '</div>' +
+    '<div style="max-height:180px;overflow-y:auto;border:1px solid #2a2f45;border-radius:6px">' +
     '<table style="width:100%;border-collapse:collapse">' +
-      '<thead><tr style="background:#21253a"><th style="padding:8px;text-align:left;font-size:12px;color:#8892b0">ISN</th><th style="padding:8px;text-align:left;font-size:12px;color:#8892b0">Meses</th><th style="padding:8px;text-align:left;font-size:12px;color:#8892b0">Score</th></tr></thead>' +
-      '<tbody>' + topRows + '</tbody></table></div>';
+      '<thead><tr style="background:#21253a"><th style="padding:4px 6px;text-align:left;font-size:10px;color:#8892b0">ISN</th><th style="padding:4px 6px;text-align:center;font-size:10px;color:#8892b0">Mês</th><th style="padding:4px 6px;text-align:right;font-size:10px;color:#8892b0">Score</th></tr></thead>' +
+      '<tbody>' + topRows + '</tbody></table></div></div>';
   var tabMl = document.getElementById('tab-ml');
   tabMl.innerHTML = html;
-  console.log('[mostrarResultadoML] innerHTML injetado, tabMl children:', tabMl.children.length);
-  // Confirma visual: forcando repaint
-  tabMl.style.display = 'none';
-  tabMl.offsetHeight; // trigger repaint
-  tabMl.style.display = 'block';
-  window.scrollTo({top: 0, behavior: 'smooth'});
-  console.log('[mostrarResultadoML] FIM - HTML injetado');
 }
 
 function voltarFormML() {
